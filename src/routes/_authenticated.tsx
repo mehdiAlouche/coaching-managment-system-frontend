@@ -1,0 +1,70 @@
+import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router'
+import { useAuth } from '../context/AuthContext'
+
+export const Route = createFileRoute('/_authenticated')({
+  beforeLoad: () => {
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      throw redirect({
+        to: '/login',
+        replace: true,
+      })
+    }
+  },
+  component: AuthenticatedLayout,
+})
+
+function AuthenticatedLayout() {
+  const { user, logout } = useAuth()
+  const navigate = Route.useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate({ to: '/login' })
+  }
+
+  return (
+    <>
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">CM</span>
+              </div>
+              <span className="font-semibold text-gray-900 hidden sm:inline">Coaching Manager</span>
+            </Link>
+
+            <div className="flex items-center gap-6">
+              <nav className="hidden md:flex gap-6">
+                <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Dashboard
+                </Link>
+                <Link to="/sessions" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Sessions
+                </Link>
+                <Link to="/calendar" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Calendar
+                </Link>
+              </nav>
+
+              <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-gray-500 text-xs capitalize">{user?.role}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <Outlet />
+    </>
+  )
+}
