@@ -4,7 +4,6 @@
  * If not set, defaults are used (for backward compatibility)
  */
 
-// Helper function to replace route parameters
 const replaceParams = (endpoint: string, params: Record<string, string>): string => {
   let result = endpoint
   Object.entries(params).forEach(([key, value]) => {
@@ -14,54 +13,269 @@ const replaceParams = (endpoint: string, params: Record<string, string>): string
 }
 
 const endpoints = {
-  // Auth endpoints
+  // ─────────────────────────────────────────
+  // AUTH
+  // ─────────────────────────────────────────
   auth: {
     login: import.meta.env.VITE_API_ENDPOINT_AUTH_LOGIN || '/auth/login',
     register: import.meta.env.VITE_API_ENDPOINT_AUTH_REGISTER || '/auth/register',
     me: import.meta.env.VITE_API_ENDPOINT_AUTH_ME || '/auth/me',
   },
-  
-  // Session endpoints
+
+  // ─────────────────────────────────────────
+  // SESSIONS
+  // ─────────────────────────────────────────
   sessions: {
     list: import.meta.env.VITE_API_ENDPOINT_SESSIONS_LIST || '/sessions',
     create: import.meta.env.VITE_API_ENDPOINT_SESSIONS_CREATE || '/sessions',
-    get: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_GET || '/sessions/:id'
-      return replaceParams(template, { id })
+
+    get: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_GET || '/sessions/:sessionId'
+      return replaceParams(template, { sessionId })
     },
-    update: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_UPDATE || '/sessions/:id'
-      return replaceParams(template, { id })
+
+    update: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_UPDATE || '/sessions/:sessionId'
+      return replaceParams(template, { sessionId })
     },
-    delete: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_DELETE || '/sessions/:id'
-      return replaceParams(template, { id })
+
+    partialUpdate: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_PATCH || '/sessions/:sessionId'
+      return replaceParams(template, { sessionId })
     },
+
+    delete: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_DELETE || '/sessions/:sessionId'
+      return replaceParams(template, { sessionId })
+    },
+
+    // Session Notes
+    notes: {
+      list: (sessionId: string) => {
+        const template = import.meta.env.VITE_API_ENDPOINT_SESSION_NOTES_LIST ||
+          '/sessions/:sessionId/notes'
+        return replaceParams(template, { sessionId })
+      },
+      create: (sessionId: string) => {
+        const template = import.meta.env.VITE_API_ENDPOINT_SESSION_NOTES_CREATE ||
+          '/sessions/:sessionId/notes'
+        return replaceParams(template, { sessionId })
+      }
+    }
   },
-  
-  // Dashboard endpoints
+
+  // ─────────────────────────────────────────
+  // DASHBOARD
+  // ─────────────────────────────────────────
   dashboard: {
     stats: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_STATS || '/dashboard/stats',
+
+    sessions: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_SESSIONS ||
+      '/dashboard/sessions',
+
+    goalsByCategory: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_GOALS_CATEGORY ||
+      '/dashboard/goals-category',
+
+    revenue: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_REVENUE ||
+      '/dashboard/revenue',
   },
-  // Users endpoints
+
+  // ─────────────────────────────────────────
+  // USERS
+  // ─────────────────────────────────────────
   users: {
     list: import.meta.env.VITE_API_ENDPOINT_USERS_LIST || '/users',
     create: import.meta.env.VITE_API_ENDPOINT_USERS_CREATE || '/users',
-    get: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_GET || '/users/:id'
-      return replaceParams(template, { id })
+
+    get: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_GET || '/users/:userId'
+      return replaceParams(template, { userId })
     },
-    update: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_UPDATE || '/users/:id'
-      return replaceParams(template, { id })
+
+    update: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_UPDATE || '/users/:userId'
+      return replaceParams(template, { userId })
     },
-    delete: (id: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_DELETE || '/users/:id'
-      return replaceParams(template, { id })
+
+    partialUpdate: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_PATCH || '/users/:userId'
+      return replaceParams(template, { userId })
+    },
+
+    delete: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_DELETE || '/users/:userId'
+      return replaceParams(template, { userId })
     },
   },
- 
+
+  // ─────────────────────────────────────────
+  // GOALS
+  // ─────────────────────────────────────────
+  goals: {
+    list: import.meta.env.VITE_API_ENDPOINT_GOALS_LIST || '/goals',
+    create: import.meta.env.VITE_API_ENDPOINT_GOALS_CREATE || '/goals',
+
+    get: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_GET || '/goals/:goalId'
+      return replaceParams(template, { goalId })
+    },
+
+    update: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_UPDATE || '/goals/:goalId'
+      return replaceParams(template, { goalId })
+    },
+
+    partialUpdate: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_PATCH || '/goals/:goalId'
+      return replaceParams(template, { goalId })
+    },
+
+    delete: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_DELETE || '/goals/:goalId'
+      return replaceParams(template, { goalId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // PAYMENTS
+  // ─────────────────────────────────────────
+  payments: {
+    list: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_LIST || '/payments',
+    create: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_CREATE || '/payments',
+
+    get: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_GET || '/payments/:paymentId'
+      return replaceParams(template, { paymentId })
+    },
+
+    update: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_UPDATE || '/payments/:paymentId'
+      return replaceParams(template, { paymentId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // COACHES
+  // ─────────────────────────────────────────
+  coaches: {
+    list: import.meta.env.VITE_API_ENDPOINT_COACHES_LIST || '/coaches',
+    get: (coachId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_COACHES_GET || '/coaches/:coachId'
+      return replaceParams(template, { coachId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // ENTREPRENEURS
+  // ─────────────────────────────────────────
+  entrepreneurs: {
+    list: import.meta.env.VITE_API_ENDPOINT_ENTREPRENEURS_LIST || '/entrepreneurs',
+    get: (entrepreneurId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_ENTREPRENEURS_GET ||
+        '/entrepreneurs/:entrepreneurId'
+      return replaceParams(template, { entrepreneurId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // STARTUPS
+  // ─────────────────────────────────────────
+  startups: {
+    list: import.meta.env.VITE_API_ENDPOINT_STARTUPS_LIST || '/startups',
+    get: (startupId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_STARTUPS_GET ||
+        '/startups/:startupId'
+      return replaceParams(template, { startupId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // ACTIVITY
+  // ─────────────────────────────────────────
+  activity: {
+    list: import.meta.env.VITE_API_ENDPOINT_ACTIVITY_LIST || '/activities',
+    create: import.meta.env.VITE_API_ENDPOINT_ACTIVITY_CREATE || '/activities',
+  },
+
+  // ─────────────────────────────────────────
+  // EXPORT
+  // ─────────────────────────────────────────
+  export: {
+    dashboard: import.meta.env.VITE_API_ENDPOINT_EXPORT_DASHBOARD ||
+      '/exports/dashboard',
+  },
+
+  // ─────────────────────────────────────────
+  // ORGANIZATION
+  // ─────────────────────────────────────────
+  organization: {
+    get: import.meta.env.VITE_API_ENDPOINT_ORGANIZATION_GET || '/organization',
+    update: import.meta.env.VITE_API_ENDPOINT_ORGANIZATION_UPDATE || '/organization',
+    uploadLogo: import.meta.env.VITE_API_ENDPOINT_ORGANIZATION_UPLOAD_LOGO ||
+      '/organization/logo',
+  },
+
+  // ─────────────────────────────────────────
+  // ROLES
+  // ─────────────────────────────────────────
+  roles: {
+    list: import.meta.env.VITE_API_ENDPOINT_ROLES_LIST || '/roles',
+    create: import.meta.env.VITE_API_ENDPOINT_ROLES_CREATE || '/roles',
+
+    update: (roleId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_ROLES_UPDATE || '/roles/:roleId'
+      return replaceParams(template, { roleId })
+    },
+
+    delete: (roleId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_ROLES_DELETE || '/roles/:roleId'
+      return replaceParams(template, { roleId })
+    },
+  },
+
+  // ─────────────────────────────────────────
+  // FILE UPLOAD
+  // ─────────────────────────────────────────
+  files: {
+    upload: import.meta.env.VITE_API_ENDPOINT_FILES_UPLOAD || '/upload',
+    delete: (fileId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_FILES_DELETE || '/upload/:fileId'
+      return replaceParams(template, { fileId })
+    }
+  },
+
+  // ─────────────────────────────────────────
+  // NOTIFICATIONS
+  // ─────────────────────────────────────────
+  notifications: {
+    list: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_LIST || '/notifications',
+
+    markRead: (notificationId: string) => {
+      const template =
+        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_MARK_READ ||
+        '/notifications/:notificationId/read'
+
+      return replaceParams(template, { notificationId })
+    }
+  },
+
+  // ─────────────────────────────────────────
+  // "ME" Endpoints
+  // ─────────────────────────────────────────
+  me: {
+    sessions: import.meta.env.VITE_API_ENDPOINT_ME_SESSIONS || '/me/sessions',
+    goals: import.meta.env.VITE_API_ENDPOINT_ME_GOALS || '/me/goals',
+    startups: import.meta.env.VITE_API_ENDPOINT_ME_STARTUPS || '/me/startups',
+    payments: import.meta.env.VITE_API_ENDPOINT_ME_PAYMENTS || '/me/payments',
+    notifications: import.meta.env.VITE_API_ENDPOINT_ME_NOTIFICATIONS || '/me/notifications',
+  },
+
+  // ─────────────────────────────────────────
+  // SEARCH
+  // ─────────────────────────────────────────
+  search: {
+    global: import.meta.env.VITE_API_ENDPOINT_SEARCH_GLOBAL || '/search',
+  }
 } as const
 
 export default endpoints
-
