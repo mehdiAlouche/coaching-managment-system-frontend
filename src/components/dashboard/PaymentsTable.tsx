@@ -1,50 +1,67 @@
-import type { Payment } from '../../lib/queries'
+import type { Payment } from '../../models'
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '../ui/table'
+import { Badge } from '../ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+
+const statusVariantMap = {
+	pending: 'secondary',
+	paid: 'default',
+	overdue: 'destructive',
+} as const
 
 export default function PaymentsTable({ items }: { items: Payment[] }) {
 	return (
-		<section className="mb-6">
-			<h2 className="text-lg font-semibold mb-4">Payments</h2>
-			<div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
-						<tr>
-							<Th>Id</Th>
-							<Th>Amount</Th>
-							<Th>Status</Th>
-							<Th>Date</Th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-gray-100">
-						{items.map((p) => (
-							<tr key={p.id} className="bg-white">
-								<Td>{p.id}</Td>
-								<Td>${p.amount.toFixed(2)}</Td>
-								<Td className="capitalize">{p.status}</Td>
-								<Td>{new Date(p.date).toLocaleDateString()}</Td>
-							</tr>
-						))}
-						{items.length === 0 && (
-							<tr>
-								<Td colSpan={4} className="text-center text-gray-500">
-									No payments
-								</Td>
-							</tr>
-						)}
-					</tbody>
-				</table>
-			</div>
+		<section className="mb-8">
+			<Card>
+				<CardHeader>
+					<CardTitle>Payments</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Id</TableHead>
+								<TableHead>Amount</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead>Date</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{items.length === 0 ? (
+								<TableRow>
+									<TableCell colSpan={4} className="text-center text-muted-foreground">
+										No payments
+									</TableCell>
+								</TableRow>
+							) : (
+								items.map((p) => (
+									<TableRow key={p.id}>
+										<TableCell className="font-mono text-xs">{p.id}</TableCell>
+										<TableCell className="font-semibold">${p.amount.toFixed(2)}</TableCell>
+										<TableCell>
+											<Badge 
+												variant={statusVariantMap[p.status] || 'secondary'}
+												className="capitalize"
+											>
+												{p.status}
+											</Badge>
+										</TableCell>
+										<TableCell>{new Date(p.date).toLocaleDateString()}</TableCell>
+									</TableRow>
+								))
+							)}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
 		</section>
-	)
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-	return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{children}</th>
-}
-function Td({ children, colSpan }: { children: React.ReactNode; colSpan?: number }) {
-	return (
-		<td colSpan={colSpan} className="px-4 py-2 text-sm text-gray-700">
-			{children}
-		</td>
 	)
 }
 

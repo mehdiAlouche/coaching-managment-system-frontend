@@ -1,30 +1,13 @@
-import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router'
+import { Outlet, Link } from '@tanstack/react-router'
 import { useAuth } from '../context/AuthContext'
 import { getDashboardRoute } from '../lib/dashboard-routes'
 
-export const Route = createFileRoute('/_authenticated')({
-  beforeLoad: async () => {
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      throw redirect({
-        to: '/auth/login',
-        replace: true,
-      })
-    }
-    return { auth: { isAuthenticated: !!token } }
-  },
-  component: AuthenticatedLayout,
-})
+interface AuthenticatedLayoutProps {
+  onLogout: () => void
+}
 
-function AuthenticatedLayout() {
-  const { user, logout, isLoading } = useAuth()
-  const navigate = Route.useNavigate()
-
-  const handleLogout = () => {
-    logout()
-    navigate({ to: '/auth/login' })
-  }
-
+export function AuthenticatedLayout({ onLogout }: AuthenticatedLayoutProps) {
+  const { user } = useAuth()
   const dashboardRoute = getDashboardRoute(user?.role)
 
   return (
@@ -58,7 +41,7 @@ function AuthenticatedLayout() {
                   <p className="text-gray-500 text-xs capitalize">{user?.role}</p>
                 </div>
                 <button
-                  onClick={handleLogout}
+                  onClick={onLogout}
                   className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
                 >
                   Logout
@@ -72,3 +55,4 @@ function AuthenticatedLayout() {
     </>
   )
 }
+

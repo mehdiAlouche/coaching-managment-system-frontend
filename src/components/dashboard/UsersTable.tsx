@@ -1,48 +1,66 @@
-import type { User } from '../../lib/queries'
+import type { UserDetailed as User } from '../../models'
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '../ui/table'
+import { Badge } from '../ui/badge'
+import { Avatar, AvatarFallback } from '../ui/avatar'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 
 export default function UsersTable({ items }: { items: User[] }) {
 	return (
-		<section className="mb-6">
-			<h2 className="text-lg font-semibold mb-4">Users</h2>
-			<div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
-						<tr>
-							<Th>Name</Th>
-							<Th>Email</Th>
-							<Th>Role</Th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-gray-100">
-						{items.map((u) => (
-							<tr key={u.id} className="bg-white">
-								<Td>{u.name}</Td>
-								<Td>{u.email}</Td>
-								<Td className="capitalize">{u.role}</Td>
-							</tr>
-						))}
-						{items.length === 0 && (
-							<tr>
-								<Td colSpan={3} className="text-center text-gray-500">
-									No users
-								</Td>
-							</tr>
-						)}
-					</tbody>
-				</table>
-			</div>
+		<section className="mb-8">
+			<Card>
+				<CardHeader>
+					<CardTitle>Users</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Name</TableHead>
+								<TableHead>Email</TableHead>
+								<TableHead>Role</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{items.length === 0 ? (
+								<TableRow>
+									<TableCell colSpan={3} className="text-center text-muted-foreground">
+										No users
+									</TableCell>
+								</TableRow>
+							) : (
+								items.map((u) => (
+									<TableRow key={u._id}>
+										<TableCell>
+											<div className="flex items-center gap-3">
+												<Avatar>
+													<AvatarFallback>
+														{u.firstName[0]}{u.lastName[0]}
+													</AvatarFallback>
+												</Avatar>
+												<span className="font-medium">{`${u.firstName} ${u.lastName}`}</span>
+											</div>
+										</TableCell>
+										<TableCell>{u.email}</TableCell>
+										<TableCell>
+											<Badge variant="secondary" className="capitalize">
+												{u.role}
+											</Badge>
+										</TableCell>
+									</TableRow>
+								))
+							)}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
 		</section>
-	)
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-	return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{children}</th>
-}
-function Td({ children, colSpan }: { children: React.ReactNode; colSpan?: number }) {
-	return (
-		<td colSpan={colSpan} className="px-4 py-2 text-sm text-gray-700">
-			{children}
-		</td>
 	)
 }
 

@@ -1,9 +1,8 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { apiClient } from "../lib/api-client"
-import endpoints from "../lib/api-endpoints"
-import type { Session } from "../types"
+import { apiClient, endpoints } from "../services"
+import type { SessionDetailed as Session } from "../models"
 
 type SortOption = "date" | "title" | "status"
 type FilterStatus = "all" | "scheduled" | "completed" | "cancelled"

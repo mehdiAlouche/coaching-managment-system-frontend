@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router'
-import { useAuth } from '../context/AuthContext'
-import { getDashboardRoute } from '../lib/dashboard-routes'
+import { useAuth } from '../../context/AuthContext'
+import { getDashboardRoute } from '../../lib/dashboard-routes'
 
-export const Route = createFileRoute('/_authenticated')({
+export const Route = createFileRoute('/_authenticated/_layout')({
   beforeLoad: async () => {
     const token = localStorage.getItem('auth_token')
     if (!token) {
@@ -72,3 +72,4 @@ function AuthenticatedLayout() {
     </>
   )
 }
+

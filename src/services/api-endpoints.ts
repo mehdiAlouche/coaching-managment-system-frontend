@@ -43,6 +43,24 @@ const endpoints = {
   dashboard: {
     stats: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_STATS || '/dashboard/stats',
   },
+  // Users endpoints
+  users: {
+    list: import.meta.env.VITE_API_ENDPOINT_USERS_LIST || '/users',
+    create: import.meta.env.VITE_API_ENDPOINT_USERS_CREATE || '/users',
+    get: (id: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_GET || '/users/:id'
+      return replaceParams(template, { id })
+    },
+    update: (id: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_UPDATE || '/users/:id'
+      return replaceParams(template, { id })
+    },
+    delete: (id: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_DELETE || '/users/:id'
+      return replaceParams(template, { id })
+    },
+  },
+ 
 } as const
 
 export default endpoints

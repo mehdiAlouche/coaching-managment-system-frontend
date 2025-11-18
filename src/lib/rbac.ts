@@ -1,7 +1,8 @@
 // Role-Based Access Control (RBAC) helper
 // Defines roles, actions, subjects, and a permission matrix with a type-safe can() API.
+import type { UserRole, RbacContext } from '../models'
 
-export type UserRole = 'manager' | 'coach' | 'entrepreneur' | 'admin'
+export type { UserRole, RbacContext }
 
 export type Action =
 	| 'view'
@@ -20,13 +21,6 @@ export type Subject =
 	| 'orgSettings'
 	| 'feedback'
 
-export type RbacContext = {
-	role: UserRole
-	// Optional scoping identifiers for more granular checks (e.g., own vs assigned vs org-wide)
-	userId?: string
-	coachId?: string
-	orgId?: string
-}
 
 type PermissionMatrix = {
 	[role in UserRole]: {

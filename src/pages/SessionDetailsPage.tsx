@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiClient } from "../lib/api-client"
-import endpoints from "../lib/api-endpoints"
-import type { Session } from "../types"
+import { apiClient, endpoints } from "../services"
+import type { SessionDetailed as Session } from "../models"
 import { useState } from "react"
 
 interface SessionDetailsPageProps {

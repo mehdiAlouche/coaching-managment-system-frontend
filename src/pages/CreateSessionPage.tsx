@@ -3,8 +3,7 @@ import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useMutation } from "@tanstack/react-query"
-import { apiClient } from "../lib/api-client"
-import endpoints from "../lib/api-endpoints"
+import { apiClient, endpoints } from "../services"
 
 export default function CreateSessionPage() {
   const navigate = useNavigate()

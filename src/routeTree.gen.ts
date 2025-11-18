@@ -9,31 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
-import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated.sessions.index'
-import { Route as AuthenticatedSessionsCreateRouteImport } from './routes/_authenticated.sessions.create'
-import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated.sessions.$id'
-import { Route as AuthenticatedDashboardManagerRouteImport } from './routes/_authenticated.dashboard.manager'
-import { Route as AuthenticatedDashboardEntrepreneurRouteImport } from './routes/_authenticated.dashboard.entrepreneur'
-import { Route as AuthenticatedDashboardCoachRouteImport } from './routes/_authenticated.dashboard.coach'
-import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated.dashboard.admin'
-import { Route as AuthenticatedSessionsIdEditRouteImport } from './routes/_authenticated.sessions.$id.edit'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedLayoutRouteImport } from './routes/_authenticated/_layout'
+import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
+import { Route as AuthenticatedSessionsCreateRouteImport } from './routes/_authenticated/sessions/create'
+import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated/sessions/$id'
+import { Route as AuthenticatedDashboardManagerRouteImport } from './routes/_authenticated/dashboard/manager'
+import { Route as AuthenticatedDashboardEntrepreneurRouteImport } from './routes/_authenticated/dashboard/entrepreneur'
+import { Route as AuthenticatedDashboardCoachRouteImport } from './routes/_authenticated/dashboard/coach'
+import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated/dashboard/admin'
+import { Route as AuthenticatedSessionsIdEditRouteImport } from './routes/_authenticated/sessions/$id.edit'
 
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -43,14 +33,23 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedLayoutRoute = AuthenticatedLayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSessionsIndexRoute =
@@ -72,27 +71,27 @@ const AuthenticatedSessionsIdRoute = AuthenticatedSessionsIdRouteImport.update({
 } as any)
 const AuthenticatedDashboardManagerRoute =
   AuthenticatedDashboardManagerRouteImport.update({
-    id: '/manager',
-    path: '/manager',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+    id: '/dashboard/manager',
+    path: '/dashboard/manager',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardEntrepreneurRoute =
   AuthenticatedDashboardEntrepreneurRouteImport.update({
-    id: '/entrepreneur',
-    path: '/entrepreneur',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+    id: '/dashboard/entrepreneur',
+    path: '/dashboard/entrepreneur',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardCoachRoute =
   AuthenticatedDashboardCoachRouteImport.update({
-    id: '/coach',
-    path: '/coach',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+    id: '/dashboard/coach',
+    path: '/dashboard/coach',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardAdminRoute =
   AuthenticatedDashboardAdminRouteImport.update({
-    id: '/admin',
-    path: '/admin',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+    id: '/dashboard/admin',
+    path: '/dashboard/admin',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSessionsIdEditRoute =
   AuthenticatedSessionsIdEditRouteImport.update({
@@ -103,10 +102,9 @@ const AuthenticatedSessionsIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
   '/calendar': typeof AuthenticatedCalendarRoute
-  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
@@ -118,10 +116,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
   '/calendar': typeof AuthenticatedCalendarRoute
-  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
@@ -135,10 +132,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/_authenticated/_layout': typeof AuthenticatedLayoutRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/_authenticated/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/_authenticated/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/_authenticated/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
@@ -152,10 +149,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/register'
     | '/calendar'
-    | '/dashboard'
+    | '/auth/login'
+    | '/auth/register'
     | '/dashboard/admin'
     | '/dashboard/coach'
     | '/dashboard/entrepreneur'
@@ -167,10 +163,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
-    | '/register'
     | '/calendar'
-    | '/dashboard'
+    | '/auth/login'
+    | '/auth/register'
     | '/dashboard/admin'
     | '/dashboard/coach'
     | '/dashboard/entrepreneur'
@@ -183,10 +178,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/login'
-    | '/register'
+    | '/_authenticated/_layout'
     | '/_authenticated/calendar'
-    | '/_authenticated/dashboard'
+    | '/auth/login'
+    | '/auth/register'
     | '/_authenticated/dashboard/admin'
     | '/_authenticated/dashboard/coach'
     | '/_authenticated/dashboard/entrepreneur'
@@ -200,26 +195,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -234,18 +215,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/calendar': {
       id: '/_authenticated/calendar'
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_layout': {
+      id: '/_authenticated/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedLayoutRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sessions/': {
@@ -271,31 +266,31 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/dashboard/manager': {
       id: '/_authenticated/dashboard/manager'
-      path: '/manager'
+      path: '/dashboard/manager'
       fullPath: '/dashboard/manager'
       preLoaderRoute: typeof AuthenticatedDashboardManagerRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard/entrepreneur': {
       id: '/_authenticated/dashboard/entrepreneur'
-      path: '/entrepreneur'
+      path: '/dashboard/entrepreneur'
       fullPath: '/dashboard/entrepreneur'
       preLoaderRoute: typeof AuthenticatedDashboardEntrepreneurRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard/coach': {
       id: '/_authenticated/dashboard/coach'
-      path: '/coach'
+      path: '/dashboard/coach'
       fullPath: '/dashboard/coach'
       preLoaderRoute: typeof AuthenticatedDashboardCoachRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard/admin': {
       id: '/_authenticated/dashboard/admin'
-      path: '/admin'
+      path: '/dashboard/admin'
       fullPath: '/dashboard/admin'
       preLoaderRoute: typeof AuthenticatedDashboardAdminRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sessions/$id/edit': {
       id: '/_authenticated/sessions/$id/edit'
@@ -306,27 +301,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedDashboardRouteChildren {
-  AuthenticatedDashboardAdminRoute: typeof AuthenticatedDashboardAdminRoute
-  AuthenticatedDashboardCoachRoute: typeof AuthenticatedDashboardCoachRoute
-  AuthenticatedDashboardEntrepreneurRoute: typeof AuthenticatedDashboardEntrepreneurRoute
-  AuthenticatedDashboardManagerRoute: typeof AuthenticatedDashboardManagerRoute
-}
-
-const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
-  {
-    AuthenticatedDashboardAdminRoute: AuthenticatedDashboardAdminRoute,
-    AuthenticatedDashboardCoachRoute: AuthenticatedDashboardCoachRoute,
-    AuthenticatedDashboardEntrepreneurRoute:
-      AuthenticatedDashboardEntrepreneurRoute,
-    AuthenticatedDashboardManagerRoute: AuthenticatedDashboardManagerRoute,
-  }
-
-const AuthenticatedDashboardRouteWithChildren =
-  AuthenticatedDashboardRoute._addFileChildren(
-    AuthenticatedDashboardRouteChildren,
-  )
 
 interface AuthenticatedSessionsIdRouteChildren {
   AuthenticatedSessionsIdEditRoute: typeof AuthenticatedSessionsIdEditRoute
@@ -343,16 +317,25 @@ const AuthenticatedSessionsIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedLayoutRoute: typeof AuthenticatedLayoutRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
+  AuthenticatedDashboardAdminRoute: typeof AuthenticatedDashboardAdminRoute
+  AuthenticatedDashboardCoachRoute: typeof AuthenticatedDashboardCoachRoute
+  AuthenticatedDashboardEntrepreneurRoute: typeof AuthenticatedDashboardEntrepreneurRoute
+  AuthenticatedDashboardManagerRoute: typeof AuthenticatedDashboardManagerRoute
   AuthenticatedSessionsIdRoute: typeof AuthenticatedSessionsIdRouteWithChildren
   AuthenticatedSessionsCreateRoute: typeof AuthenticatedSessionsCreateRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedLayoutRoute: AuthenticatedLayoutRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
+  AuthenticatedDashboardAdminRoute: AuthenticatedDashboardAdminRoute,
+  AuthenticatedDashboardCoachRoute: AuthenticatedDashboardCoachRoute,
+  AuthenticatedDashboardEntrepreneurRoute:
+    AuthenticatedDashboardEntrepreneurRoute,
+  AuthenticatedDashboardManagerRoute: AuthenticatedDashboardManagerRoute,
   AuthenticatedSessionsIdRoute: AuthenticatedSessionsIdRouteWithChildren,
   AuthenticatedSessionsCreateRoute: AuthenticatedSessionsCreateRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
@@ -365,8 +348,8 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  LoginRoute: LoginRoute,
-  RegisterRoute: RegisterRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
