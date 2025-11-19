@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { UserRole } from '../../../models'
 import StatsCards from '../../../components/dashboard/StatsCards'
 import UpcomingSessions from '../../../components/dashboard/UpcomingSessions'
 import ActivityFeed from '../../../components/dashboard/ActivityFeed'
@@ -10,6 +11,12 @@ import { useAuth } from '../../../context/AuthContext'
 import { can } from '../../../lib/rbac'
 
 export const Route = createFileRoute('/_authenticated/dashboard/manager')({
+  beforeLoad: async () => {
+    const role = localStorage.getItem('auth_role')
+    if (role !== UserRole.MANAGER) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: ManagerDashboard,
 })
 
@@ -33,12 +40,12 @@ function ManagerDashboard() {
           <p className="text-muted-foreground text-lg">Manage your coaching organization and track performance</p>
         </div>
 
-        
+
         {stats && <StatsCards stats={stats} />}
 
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           <div className="lg:col-span-2 space-y-8">
             {sessions && Array.isArray(sessions) && (
               <UpcomingSessions sessions={sessions.slice(0, 5)} />
@@ -51,7 +58,7 @@ function ManagerDashboard() {
             )}
           </div>
 
-          
+
           <div className="lg:col-span-1 space-y-8">
             {payments && Array.isArray(payments) && can(rbacCtx, 'view', 'payments') && (
               <PaymentsTable items={payments.slice(0, 5)} />

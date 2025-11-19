@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { UserRole } from '../../../models'
 import StatsCards from '../../../components/dashboard/StatsCards'
 import UsersTable from '../../../components/dashboard/UsersTable'
 import { useDashboardStats, useUsers } from '../../../hooks'
@@ -6,6 +7,12 @@ import { useAuth } from '../../../context/AuthContext'
 import { can } from '../../../lib/rbac'
 
 export const Route = createFileRoute('/_authenticated/dashboard/admin')({
+  beforeLoad: async () => {
+    const role = localStorage.getItem('auth_role')
+    if (role !== UserRole.ADMIN) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: AdminDashboard,
 })
 

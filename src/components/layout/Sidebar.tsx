@@ -1,11 +1,14 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Users, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
   LogOut,
   Menu,
-  X
+  X,
+  Target,
+  DollarSign,
+  Users2
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
@@ -23,23 +26,54 @@ export function Sidebar({ onLogout }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const dashboardRoute = getDashboardRoute(user?.role)
 
-  const navigation = [
-    {
-      name: 'Dashboard',
-      href: dashboardRoute,
-      icon: LayoutDashboard,
-    },
-    {
-      name: 'Sessions',
-      href: '/sessions',
-      icon: Users,
-    },
-    {
-      name: 'Calendar',
-      href: '/calendar',
-      icon: Calendar,
-    },
-  ]
+  const getNavigation = () => {
+    const baseNav = [
+      {
+        name: 'Dashboard',
+        href: dashboardRoute,
+        icon: LayoutDashboard,
+      },
+      {
+        name: user?.role === 'entrepreneur' ? 'My Sessions' : 'Sessions',
+        href: '/sessions',
+        icon: Users,
+      },
+      {
+        name: 'Calendar',
+        href: '/calendar',
+        icon: Calendar,
+      },
+    ]
+
+    // Add Goals for all roles
+    baseNav.push({
+      name: user?.role === 'entrepreneur' ? 'My Goals' : 'Goals',
+      href: '/goals',
+      icon: Target,
+    })
+
+    // Add Payments for managers and coaches
+    if (user?.role === 'manager' || user?.role === 'coach') {
+      baseNav.push({
+        name: user?.role === 'coach' ? 'My Payments' : 'Payments',
+        href: '/payments',
+        icon: DollarSign,
+      })
+    }
+
+    // Add Users for managers only
+    if (user?.role === 'manager' || user?.role === 'admin') {
+      baseNav.push({
+        name: 'Users',
+        href: '/users',
+        icon: Users2,
+      })
+    }
+
+    return baseNav
+  }
+
+  const navigation = getNavigation()
 
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/')

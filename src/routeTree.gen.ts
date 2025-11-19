@@ -15,7 +15,10 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedLayoutRouteImport } from './routes/_authenticated/_layout'
+import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
+import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments/index'
+import { Route as AuthenticatedGoalsIndexRouteImport } from './routes/_authenticated/goals/index'
 import { Route as AuthenticatedSessionsCreateRouteImport } from './routes/_authenticated/sessions/create'
 import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated/sessions/$id'
 import { Route as AuthenticatedDashboardManagerRouteImport } from './routes/_authenticated/dashboard/manager'
@@ -52,12 +55,28 @@ const AuthenticatedLayoutRoute = AuthenticatedLayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedSessionsIndexRoute =
   AuthenticatedSessionsIndexRouteImport.update({
     id: '/sessions/',
     path: '/sessions/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPaymentsIndexRoute =
+  AuthenticatedPaymentsIndexRouteImport.update({
+    id: '/payments/',
+    path: '/payments/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGoalsIndexRoute = AuthenticatedGoalsIndexRouteImport.update({
+  id: '/goals/',
+  path: '/goals/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedSessionsCreateRoute =
   AuthenticatedSessionsCreateRouteImport.update({
     id: '/sessions/create',
@@ -111,7 +130,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/goals': typeof AuthenticatedGoalsIndexRoute
+  '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
+  '/users': typeof AuthenticatedUsersIndexRoute
   '/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -125,7 +147,10 @@ export interface FileRoutesByTo {
   '/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/goals': typeof AuthenticatedGoalsIndexRoute
+  '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
+  '/users': typeof AuthenticatedUsersIndexRoute
   '/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
 }
 export interface FileRoutesById {
@@ -142,7 +167,10 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/_authenticated/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/_authenticated/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/_authenticated/goals/': typeof AuthenticatedGoalsIndexRoute
+  '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
+  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
 }
 export interface FileRouteTypes {
@@ -158,7 +186,10 @@ export interface FileRouteTypes {
     | '/dashboard/manager'
     | '/sessions/$id'
     | '/sessions/create'
+    | '/goals'
+    | '/payments'
     | '/sessions'
+    | '/users'
     | '/sessions/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -172,7 +203,10 @@ export interface FileRouteTypes {
     | '/dashboard/manager'
     | '/sessions/$id'
     | '/sessions/create'
+    | '/goals'
+    | '/payments'
     | '/sessions'
+    | '/users'
     | '/sessions/$id/edit'
   id:
     | '__root__'
@@ -188,7 +222,10 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/manager'
     | '/_authenticated/sessions/$id'
     | '/_authenticated/sessions/create'
+    | '/_authenticated/goals/'
+    | '/_authenticated/payments/'
     | '/_authenticated/sessions/'
+    | '/_authenticated/users/'
     | '/_authenticated/sessions/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -243,11 +280,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLayoutRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/users/': {
+      id: '/_authenticated/users/'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/sessions/': {
       id: '/_authenticated/sessions/'
       path: '/sessions'
       fullPath: '/sessions'
       preLoaderRoute: typeof AuthenticatedSessionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/payments/': {
+      id: '/_authenticated/payments/'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/goals/': {
+      id: '/_authenticated/goals/'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AuthenticatedGoalsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sessions/create': {
@@ -325,7 +383,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardManagerRoute: typeof AuthenticatedDashboardManagerRoute
   AuthenticatedSessionsIdRoute: typeof AuthenticatedSessionsIdRouteWithChildren
   AuthenticatedSessionsCreateRoute: typeof AuthenticatedSessionsCreateRoute
+  AuthenticatedGoalsIndexRoute: typeof AuthenticatedGoalsIndexRoute
+  AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
+  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -338,7 +399,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardManagerRoute: AuthenticatedDashboardManagerRoute,
   AuthenticatedSessionsIdRoute: AuthenticatedSessionsIdRouteWithChildren,
   AuthenticatedSessionsCreateRoute: AuthenticatedSessionsCreateRoute,
+  AuthenticatedGoalsIndexRoute: AuthenticatedGoalsIndexRoute,
+  AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
+  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

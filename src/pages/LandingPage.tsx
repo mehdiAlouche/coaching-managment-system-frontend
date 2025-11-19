@@ -67,12 +67,13 @@ const Landing = () => {
                 Coaching Management
               </p>
             </div>
-          </div> 
-          <ModeToggle />
-          <Link to="/auth/login">
-            <Button variant="outline">Sign In</Button>
-          </Link>
-         
+          </div>
+          <div className="flex items-center gap-3">
+            <ModeToggle />
+            <Link to="/auth/login">
+              <Button variant="outline">Sign In</Button>
+            </Link>
+          </div>
         </div>
       </header>
 

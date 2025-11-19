@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { UserRole } from '../../../models'
 import StatsCards from '../../../components/dashboard/StatsCards'
 import UpcomingSessions from '../../../components/dashboard/UpcomingSessions'
 import GoalOverview from '../../../components/dashboard/GoalOverview'
@@ -6,6 +7,12 @@ import { useDashboardStats, useSessions, useGoals } from '../../../hooks'
 import { useAuth } from '../../../context/AuthContext'
 
 export const Route = createFileRoute('/_authenticated/dashboard/entrepreneur')({
+  beforeLoad: async () => {
+    const role = localStorage.getItem('auth_role')
+    if (role !== UserRole.ENTREPRENEUR) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: EntrepreneurDashboard,
 })
 

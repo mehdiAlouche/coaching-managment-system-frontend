@@ -2,52 +2,41 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { apiClient, endpoints } from "../services"
-import type { SessionDetailed as Session } from "../models"
+import type { Session, PaginatedResponse } from "../models"
 
-type SortOption = "date" | "title" | "status"
-type FilterStatus = "all" | "scheduled" | "completed" | "cancelled"
+type FilterStatus = "all" | "scheduled" | "completed" | "cancelled" | "no_show" | "rescheduled"
 
 export default function SessionsPage() {
-  const [sort, setSort] = useState<SortOption>("date")
+  const [page, setPage] = useState(1)
+  const [limit] = useState(20)
+  const [sort, setSort] = useState("-scheduledAt")
   const [filter, setFilter] = useState<FilterStatus>("all")
-  const [searchTerm, setSearchTerm] = useState("")
+  const [upcomingOnly, setUpcomingOnly] = useState(false)
 
   const {
-    data: sessions = [],
+    data,
     isLoading,
     error,
-  } = useQuery<Session[]>({
-    queryKey: ["sessions", { sort, filter, search: searchTerm }],
+  } = useQuery<PaginatedResponse<Session>>({
+    queryKey: ["sessions", { page, limit, sort, filter, upcomingOnly }],
     queryFn: async () => {
       const response = await apiClient.get(endpoints.sessions.list, {
         params: {
+          page,
+          limit,
+          sort,
           status: filter !== "all" ? filter : undefined,
-          search: searchTerm || undefined,
+          upcoming: upcomingOnly || undefined,
         },
       })
-      return response.data.data
+      return response.data
     },
   })
 
-  const sortedSessions = [...sessions].sort((a, b) => {
-    switch (sort) {
-      case "title":
-        return a.title.localeCompare(b.title)
-      case "status":
-        return a.status.localeCompare(b.status)
-      case "date":
-      default:
-        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    }
-  })
+  const sessions = data?.data || []
+  const meta = data?.meta
 
-  const filteredSessions = sortedSessions.filter((session) => {
-    const matchesSearch =
-      session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false
-    return matchesSearch
-  })
+  const totalPages = meta ? Math.ceil(meta.total / meta.limit) : 1
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,30 +51,25 @@ export default function SessionsPage() {
           </Link>
         </div>
 
+        {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search sessions..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as FilterStatus)}
+                onChange={(e) => {
+                  setFilter(e.target.value as FilterStatus)
+                  setPage(1)
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Status</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="no_show">No Show</option>
+                <option value="rescheduled">Rescheduled</option>
               </select>
             </div>
 
@@ -93,17 +77,42 @@ export default function SessionsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value as SortOption)}
+                onChange={(e) => {
+                  setSort(e.target.value)
+                  setPage(1)
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="date">Date (Newest)</option>
-                <option value="title">Title (A-Z)</option>
+                <option value="-scheduledAt">Date (Newest)</option>
+                <option value="scheduledAt">Date (Oldest)</option>
+                <option value="-duration">Duration (Longest)</option>
+                <option value="duration">Duration (Shortest)</option>
                 <option value="status">Status</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Quick Filter</label>
+              <div className="flex items-center h-10">
+                <input
+                  type="checkbox"
+                  id="upcoming"
+                  checked={upcomingOnly}
+                  onChange={(e) => {
+                    setUpcomingOnly(e.target.checked)
+                    setPage(1)
+                  }}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="upcoming" className="ml-2 text-sm text-gray-700">
+                  Upcoming sessions only
+                </label>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Loading State */}
         {isLoading && (
           <div className="bg-white p-12 rounded-lg shadow-md text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
@@ -111,6 +120,7 @@ export default function SessionsPage() {
           </div>
         )}
 
+        {/* Error State */}
         {error && (
           <div className="bg-red-50 p-6 rounded-lg shadow-md text-red-700 border border-red-200">
             <p className="font-semibold">Error loading sessions</p>
@@ -118,7 +128,8 @@ export default function SessionsPage() {
           </div>
         )}
 
-        {!isLoading && !error && filteredSessions.length === 0 && (
+        {/* Empty State */}
+        {!isLoading && !error && sessions.length === 0 && (
           <div className="bg-white p-12 rounded-lg shadow-md text-center">
             <p className="text-gray-600 mb-6">No sessions found</p>
             <Link
@@ -130,12 +141,68 @@ export default function SessionsPage() {
           </div>
         )}
 
-        {!isLoading && !error && filteredSessions.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredSessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
-            ))}
-          </div>
+        {/* Sessions Grid */}
+        {!isLoading && !error && sessions.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {sessions.map((session) => (
+                <SessionCard key={session._id} session={session} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {meta && totalPages > 1 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} sessions
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number
+                        if (totalPages <= 5) {
+                          pageNum = i + 1
+                        } else if (page <= 3) {
+                          pageNum = i + 1
+                        } else if (page >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i
+                        } else {
+                          pageNum = page - 2 + i
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`px-4 py-2 rounded-lg ${page === pageNum
+                              ? "bg-blue-600 text-white"
+                              : "border border-gray-300 hover:bg-gray-50"
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
@@ -147,43 +214,79 @@ function SessionCard({ session }: { session: Session }) {
     scheduled: "bg-blue-100 text-blue-800 border-blue-300",
     completed: "bg-green-100 text-green-800 border-green-300",
     cancelled: "bg-red-100 text-red-800 border-red-300",
+    no_show: "bg-orange-100 text-orange-800 border-orange-300",
+    rescheduled: "bg-purple-100 text-purple-800 border-purple-300",
   }
 
-  const startDate = new Date(session.startTime)
+  const scheduledDate = new Date(session.scheduledAt)
   const endDate = new Date(session.endTime)
-  const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60))
+  const isUpcoming = scheduledDate.getTime() > Date.now()
 
   return (
     <Link
       to="/sessions/$id"
-      params={{ id: session.id }}
+      params={{ id: session._id }}
       className="bg-white rounded-lg shadow hover:shadow-lg transition p-6 border-l-4 border-blue-500"
     >
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="text-xl font-semibold text-gray-900 flex-1">{session.title}</h3>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[session.status]}`}>
-          {session.status}
-        </span>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold text-gray-900 mb-1">
+            Coaching Session
+          </h3>
+          <p className="text-sm text-gray-500">ID: {session._id.slice(-8)}</p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[session.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800 border-gray-300"}`}>
+            {session.status.replace("_", " ").toUpperCase()}
+          </span>
+          {isUpcoming && (
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
+              Upcoming
+            </span>
+          )}
+        </div>
       </div>
-
-      {session.description && <p className="text-gray-600 text-sm mb-4 line-clamp-2">{session.description}</p>}
 
       <div className="space-y-2 text-sm">
         <div className="flex items-center text-gray-600">
           <span className="mr-3">📅</span>
-          {startDate.toLocaleDateString()} at{" "}
-          {startDate.toLocaleTimeString([], {
+          {scheduledDate.toLocaleDateString()} at{" "}
+          {scheduledDate.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+          {" - "}
+          {endDate.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </div>
         <div className="flex items-center text-gray-600">
           <span className="mr-3">⏱️</span>
-          {duration} minutes
+          {session.duration} minutes
         </div>
-        <div className="flex items-center text-gray-600">
-          <span className="mr-3">📍</span>
-          {session.location}
+        {session.location && (
+          <div className="flex items-center text-gray-600">
+            <span className="mr-3">📍</span>
+            {session.location}
+          </div>
+        )}
+        {session.agendaItems && session.agendaItems.length > 0 && (
+          <div className="flex items-center text-gray-600">
+            <span className="mr-3">📋</span>
+            {session.agendaItems.length} agenda {session.agendaItems.length === 1 ? "item" : "items"}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+          <div>
+            <span className="font-medium">Coach:</span> {session.coachId}
+          </div>
+          <div>
+            <span className="font-medium">Entrepreneur:</span> {session.entrepreneurId}
+          </div>
         </div>
       </div>
     </Link>

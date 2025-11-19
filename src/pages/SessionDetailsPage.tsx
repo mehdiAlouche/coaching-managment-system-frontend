@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient, endpoints } from "../services"
-import type { SessionDetailed as Session } from "../models"
+import type { Session } from "../models"
 import { useState } from "react"
 
 interface SessionDetailsPageProps {
@@ -63,18 +63,16 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
     return <div className="text-center py-12 text-red-600">Failed to load session. Please try again.</div>
   }
 
-  const startDate = new Date(session.startTime)
+  const scheduledDate = new Date(session.scheduledAt)
   const endDate = new Date(session.endTime)
-  const durationMs = endDate.getTime() - startDate.getTime()
-  const duration = Math.round(durationMs / 60000)
   const isPast = endDate.getTime() < Date.now()
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <Link to="/sessions" className="text-blue-600 hover:text-blue-700 font-medium">
-            Back to Sessions
+            ← Back to Sessions
           </Link>
           <div className="flex gap-2">
             {!isPast && session.status === "scheduled" && (
@@ -82,14 +80,14 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
                 <button
                   onClick={() => updateStatusMutation.mutate("completed")}
                   disabled={updateStatusMutation.isPending}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
                 >
                   Mark Complete
                 </button>
                 <button
                   onClick={() => updateStatusMutation.mutate("cancelled")}
                   disabled={updateStatusMutation.isPending}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -101,125 +99,165 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{session.title}</h1>
-              {session.description && <p className="text-gray-600 text-lg">{session.description}</p>}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">Coaching Session</h1>
+                <p className="text-blue-100">Session ID: {session._id}</p>
+              </div>
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-semibold ${session.status === "completed"
+                    ? "bg-green-100 text-green-800"
+                    : session.status === "cancelled"
+                      ? "bg-red-100 text-red-800"
+                      : session.status === "no_show"
+                        ? "bg-orange-100 text-orange-800"
+                        : session.status === "rescheduled"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                  }`}
+              >
+                {session.status.charAt(0).toUpperCase() + session.status.slice(1).replace("_", " ")}
+              </span>
             </div>
-            <span
-              className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                session.status === "completed"
-                  ? "bg-green-100 text-green-800"
-                  : session.status === "cancelled"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-blue-100 text-blue-800"
-              }`}
-            >
-              {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Session Details</h3>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Location</p>
-                  <p className="text-lg text-gray-900 mt-1">{session.location}</p>
-                </div>
+          {/* Main Content */}
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              {/* Session Details */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Session Details</h3>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Scheduled Date & Time</p>
+                    <div className="mt-1 space-y-1">
+                      <p className="text-lg text-gray-900 font-semibold">{scheduledDate.toLocaleDateString()}</p>
+                      <p className="text-gray-600">
+                        {scheduledDate.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" - "}
+                        {endDate.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
 
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Date and Time</p>
-                  <div className="mt-1 space-y-1">
-                    <p className="text-lg text-gray-900">{startDate.toLocaleDateString()}</p>
-                    <p className="text-gray-600">
-                      {startDate.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" - "}
-                      {endDate.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Duration</p>
+                    <p className="text-lg text-gray-900 mt-1">{session.duration} minutes</p>
+                  </div>
+
+                  {session.location && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Location</p>
+                      <p className="text-lg text-gray-900 mt-1">{session.location}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Participants */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Participants</h3>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Organization ID</p>
+                    <p className="text-sm text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded break-all">
+                      {session.organizationId}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Coach ID</p>
+                    <p className="text-sm text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded break-all">
+                      {session.coachId}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Entrepreneur ID</p>
+                    <p className="text-sm text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded break-all">
+                      {session.entrepreneurId}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Manager ID</p>
+                    <p className="text-sm text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded break-all">
+                      {session.managerId}
                     </p>
                   </div>
                 </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Duration</p>
-                  <p className="text-lg text-gray-900 mt-1">{duration} minutes</p>
-                </div>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Participants</h3>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Coach ID</p>
-                  <p className="text-lg text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded">{session.coachId}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-600">entrepreneur ID</p>
-                  <p className="text-lg text-gray-900 mt-1 font-mono bg-gray-50 px-3 py-2 rounded">
-                    {session.entrepreneurId}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {session.notes && (
-            <div className="border-t border-gray-200 pt-8 mb-8">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Notes</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-900 whitespace-pre-wrap">{session.notes}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-gray-200 pt-6 text-sm text-gray-500">
-            <p>
-              Created on {new Date(session.createdAt).toLocaleDateString()} at{" "}
-              {new Date(session.createdAt).toLocaleTimeString()}
-            </p>
-            <p>
-              Last updated {new Date(session.updatedAt).toLocaleDateString()} at{" "}
-              {new Date(session.updatedAt).toLocaleTimeString()}
-            </p>
-          </div>
-
-          <div className="border-t border-gray-200 pt-6 mt-8">
-            {!showDeleteConfirm ? (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg"
-              >
-                Delete Session
-              </button>
-            ) : (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                <p className="font-semibold text-red-900 mb-3">Are you sure? This cannot be undone.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => deleteSessionMutation.mutate()}
-                    disabled={deleteSessionMutation.isPending}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                  >
-                    {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg"
-                  >
-                    Cancel
-                  </button>
+            {/* Agenda Items */}
+            {session.agendaItems && session.agendaItems.length > 0 && (
+              <div className="border-t border-gray-200 pt-8 mb-8">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Agenda</h3>
+                <div className="space-y-4">
+                  {session.agendaItems.map((item, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-gray-900">{item.title}</h4>
+                        <span className="text-sm text-gray-600">{item.duration} min</span>
+                      </div>
+                      {item.description && <p className="text-gray-700 text-sm">{item.description}</p>}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
+
+            {/* Notes */}
+            {session.notes && Object.keys(session.notes).length > 0 && (
+              <div className="border-t border-gray-200 pt-8 mb-8">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Notes</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <pre className="text-gray-900 whitespace-pre-wrap font-sans text-sm">
+                    {JSON.stringify(session.notes, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* Delete Section */}
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium"
+                >
+                  Delete Session
+                </button>
+              ) : (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <p className="font-semibold text-red-900 mb-3">Are you sure? This cannot be undone.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => deleteSessionMutation.mutate()}
+                      disabled={deleteSessionMutation.isPending}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                    >
+                      {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

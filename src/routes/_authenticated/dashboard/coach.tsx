@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { UserRole } from '../../../models'
 import StatsCards from '../../../components/dashboard/StatsCards'
 import UpcomingSessions from '../../../components/dashboard/UpcomingSessions'
 import GoalOverview from '../../../components/dashboard/GoalOverview'
@@ -8,6 +9,12 @@ import { useAuth } from '../../../context/AuthContext'
 import { can } from '../../../lib/rbac'
 
 export const Route = createFileRoute('/_authenticated/dashboard/coach')({
+  beforeLoad: async () => {
+    const role = localStorage.getItem('auth_role')
+    if (role !== UserRole.COACH) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: CoachDashboard,
 })
 

@@ -1,158 +1,201 @@
-/**
- * Shared TypeScript Models and Interfaces
- * All application-wide type definitions
- */
+// ==============================
+// USER AND AUTH
+// ==============================
 
-// User models
+export enum UserRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  COACH = 'coach',
+  ENTREPRENEUR = 'entrepreneur',
+  STARTUP = 'startup',
+}
+
 export interface User {
-  id: string
-  email: string
-  name: string
-  role: "manager" | "coach" | "entrepreneur" | "admin"
-  createdAt: string
+  _id: string;
+  email: string;
+  role: UserRole;
+  firstName: string;
+  lastName: string;
+  organizationId: string;
+  hourlyRate?: number;
+  startupName?: string;
+  phone?: string;
+  timezone?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface UserDetailed {
-  _id: string
-  email: string
-  role: 'admin' | 'manager' | 'coach' | 'entrepreneur'
-  firstName: string
-  lastName: string
-  organizationId: string
-  hourlyRate?: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+
+
+export interface AuthLoginResponse {
+  token: string;
+  user: User;
 }
 
-export type UsersResponse = {
-  users: UserDetailed[]
-  count: number
-}
-
-// Session models
+// ==============================
+// SESSION
+// ==============================
 export interface Session {
-  id: string
-  title: string
-  description?: string
-  startTime: string
-  endTime: string
-  location: string
-  coachId: string
-  entrepreneurId: string
-  status: "scheduled" | "completed" | "cancelled" | "canceled"
-  notes?: string
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  organizationId: string;
+  coachId: string;
+  entrepreneurId: string;
+  managerId: string;
+  scheduledAt: string; // ISO
+  endTime: string; // ISO
+  duration: number; // in minutes
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled' | string;
+  agendaItems: AgendaItem[];
+  notes: Record<string, any>; // notes is an object
+  location?: string;
 }
 
 export interface AgendaItem {
-  title: string
-  description: string
-  duration: number
+  title: string;
+  description?: string;
+  duration: number; // in minutes
 }
 
-export interface SessionDetailed {
-  _id: string
-  organizationId: string
-  coachId: string
-  entrepreneurId: string
-  managerId: string
-  scheduledAt: string
-  endTime: string
-  duration: number
-  status: 'scheduled' | 'completed' | 'canceled'
-  agendaItems: AgendaItem[]
-  notes: Record<string, any>
-  location: string
+// ==============================
+// GOAL
+// ==============================
+export interface Goal {
+  _id: string;
+  organizationId: string;
+  entrepreneurId: string;
+  coachId: string;
+  title: string;
+  description: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'blocked' | string;
+  priority: 'low' | 'medium' | 'high' | string;
+  progress: number; // 0-100
+  targetDate?: string;
+  isArchived: boolean;
+  milestones: Milestone[];
+  linkedSessions: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type SessionsMeta = {
-  total: number
-  page: number
-  limit: number
+export interface Milestone {
+  title: string;
+  status: string;
+  targetDate: string;
+  completedAt?: string;
+  notes?: string;
 }
 
-export type SessionsResponse = {
-  data: SessionDetailed[]
-  meta: SessionsMeta
+// ==============================
+// PAYMENT (INVOICE)
+// ==============================
+export interface Payment {
+  _id: string;
+  organizationId: string;
+  coachId: string;
+  sessionIds: string[];
+  lineItems: PaymentLineItem[];
+  amount: number;
+  taxAmount?: number;
+  totalAmount: number;
+  currency: string;
+  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'void' | string;
+  invoiceNumber?: string;
+  invoiceUrl?: string;
+  dueDate: string;
+  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Dashboard models
-export type DashboardStats = {
+export interface PaymentLineItem {
+  sessionId: string;
+  description: string;
+  duration: number;
+  rate: number;
+  amount: number;
+}
+
+// ==============================
+// ORGANIZATION
+// ==============================
+export interface Organization {
+  _id: string;
+  name: string;
+  logoUrl?: string;
+  settings?: OrganizationSettings;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizationSettings {
+  [key: string]: string | number | boolean;
+}
+
+// ==============================
+// ROLE
+// ==============================
+export interface Role {
+  _id: string;
+  name: string;
+  permissions: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==============================
+// PAGINATION RESPONSE
+// ==============================
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+// ==============================
+// DASHBOARD (Stats/Analytics)
+// ==============================
+export interface DashboardStats {
   users: {
-    total: number
-    coaches: number
-    entrepreneurs: number
+    total: number;
+    coaches: number;
+    entrepreneurs: number;
   }
   sessions: {
-    total: number
-    upcoming: number
-    completed: number
+    total: number;
+    upcoming: number;
+    completed: number;
   }
   revenue: {
-    total: number
+    total: number;
   }
 }
 
-// Payment models
-export type Payment = {
-  id: string
-  amount: number
-  status: 'pending' | 'paid' | 'overdue'
-  date: string
-  userId?: string
-  coachId?: string
+export interface DashboardGoalsByCategory {
+  byStatus: {
+    not_started: number,
+    in_progress: number,
+    completed: number,
+    blocked: number
+  },
+  byPriority: {
+    low: number,
+    medium: number,
+    high: number,
+  }
 }
 
-// Goal models
-export interface Goal {
-  id: string
-  title: string
-  description: string
-  entrepreneurId: string
-  startDate: string
-  targetDate: string
-  status?: "active" | "completed" | "abandoned"
-  progress?: number
-  deadline?: string
-  ownerId?: string
-  coachId?: string
-  metrics?: Record<string, unknown>
-  createdAt: string
+// ==============================
+// GENERIC ENTITIES/TABLES
+// ==============================
+export interface SimpleEntity {
+  _id: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  [key: string]: any;
 }
-
-// API Response models
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-}
-
-// RBAC models
-export type UserRole = 'manager' | 'coach' | 'entrepreneur' | 'admin'
-
-export type Action =
-  | 'view'
-  | 'manage'
-  | 'create'
-  | 'edit'
-  | 'delete'
-  | 'invoice'
-  | 'configure'
-
-export type Subject =
-  | 'sessions'
-  | 'goals'
-  | 'payments'
-  | 'users'
-  | 'orgSettings'
-  | 'feedback'
-
-export type RbacContext = {
-  role: UserRole
-  userId?: string
-  coachId?: string
-  orgId?: string
-}
-
