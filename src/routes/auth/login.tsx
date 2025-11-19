@@ -46,7 +46,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-6">
@@ -54,8 +54,8 @@ function LoginPage() {
               <span className="text-white font-bold text-2xl">CM</span>
             </div>
           </div>
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-3">Welcome Back</h1>
-          <p className="text-base text-gray-600">Sign in to your coaching management account</p>
+          <h1 className="text-4xl font-extrabold text-foreground mb-3">Welcome Back</h1>
+          <p className="text-base text-muted-foreground">Sign in to your coaching management account</p>
         </div>
 
         <Card className="shadow-xl">
@@ -126,8 +126,10 @@ function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
-          For demo purposes, use test credentials from the backend
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          <Link to="/" className="hover:text-primary transition-colors">
+            ← Back to home
+          </Link>
         </p>
       </div>
     </div>

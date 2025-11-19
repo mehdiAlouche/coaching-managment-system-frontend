@@ -24,14 +24,13 @@ function ManagerDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+    <div className="p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             Welcome back, {user?.name || 'Manager'}! 👋
           </h1>
-          <p className="text-gray-600 text-lg">Manage your coaching organization and track performance</p>
+          <p className="text-muted-foreground text-lg">Manage your coaching organization and track performance</p>
         </div>
 
         

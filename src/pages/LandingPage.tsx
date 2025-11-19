@@ -1,14 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, Calendar, Target, DollarSign, Users, BarChart3 } from "lucide-react";
+import {
+  CheckCircle2,
+  Calendar,
+  Target,
+  DollarSign,
+  Users,
+  BarChart3,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { ModeToggle } from "@/components/theme/mode-toggle";
 
 const Landing = () => {
   const features = [
     {
       icon: Calendar,
       title: "Session Scheduling",
-      description: "Schedule and manage coaching sessions with integrated calendar",
+      description:
+        "Schedule and manage coaching sessions with integrated calendar",
     },
     {
       icon: Target,
@@ -47,17 +56,23 @@ const Landing = () => {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">SS</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-200">
+              <span className="text-white font-bold text-2xl">CM</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Startup Square</h1>
-              <p className="text-xs text-muted-foreground">Coaching Management</p>
+              <h1 className="text-xl font-bold text-foreground">
+                Startup Square
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Coaching Management
+              </p>
             </div>
-          </div>
+          </div> 
+          <ModeToggle />
           <Link to="/auth/login">
             <Button variant="outline">Sign In</Button>
           </Link>
+         
         </div>
       </header>
 
@@ -68,12 +83,13 @@ const Landing = () => {
             Streamline Your Coaching Operations
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            A comprehensive coaching management system built for Startup Square, enabling seamless
-            collaboration between coaches and entrepreneurs with powerful tracking and automation.
+            A comprehensive coaching management system built for Startup Square,
+            enabling seamless collaboration between coaches and entrepreneurs
+            with powerful tracking and automation.
           </p>
           <div className="flex gap-4 justify-center pt-4">
             <Link to="/auth/login">
-              <Button size="lg" className="bg-gradient-primary shadow-elegant">
+              <Button size="lg" className="bg-primary shadow-elegant">
                 Get Started
               </Button>
             </Link>
@@ -88,16 +104,23 @@ const Landing = () => {
       <section className="container mx-auto px-4 py-20 bg-secondary/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-foreground mb-4">Core Features</h3>
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              Core Features
+            </h3>
             <p className="text-muted-foreground">
               Everything you need to manage coaching sessions effectively
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="p-6 shadow-card hover:shadow-elegant transition-all duration-300">
+              <Card
+                key={index}
+                className="p-6 shadow-card hover:shadow-elegant transition-all duration-300"
+              >
                 <feature.icon className="h-12 w-12 text-primary mb-4" />
-                <h4 className="text-xl font-semibold text-foreground mb-2">{feature.title}</h4>
+                <h4 className="text-xl font-semibold text-foreground mb-2">
+                  {feature.title}
+                </h4>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
             ))}
@@ -109,14 +132,19 @@ const Landing = () => {
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-foreground mb-4">Project Goals</h3>
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              Project Goals
+            </h3>
             <p className="text-muted-foreground">
               Building a complete ecosystem for coaching management
             </p>
           </div>
           <div className="space-y-4">
             {goals.map((goal, index) => (
-              <div key={index} className="flex items-start gap-3 p-4 rounded-lg bg-card shadow-card">
+              <div
+                key={index}
+                className="flex items-start gap-3 p-4 rounded-lg bg-card shadow-card"
+              >
                 <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-foreground">{goal}</p>
               </div>
@@ -128,11 +156,12 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20 bg-gradient-primary">
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h3 className="text-4xl font-bold text-primary-foreground">
+          <h3 className="text-4xl font-bold text-foreground">
             Ready to Transform Your Coaching Program?
           </h3>
-          <p className="text-xl text-primary-foreground/90">
-            Join incubators like LaStartupStation in streamlining their coaching operations
+          <p className="text-xl text-foreground/90">
+            Join incubators like LaStartupStation in streamlining their coaching
+            operations
           </p>
           <Link to="/auth/login">
             <Button size="lg" variant="secondary" className="shadow-elegant">
@@ -145,7 +174,10 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>© 2025 Startup Square. Built with React, TypeScript, and Tailwind CSS.</p>
+          <p>
+            © 2025 Startup Square. Built with React, TypeScript, and Tailwind
+            CSS.
+          </p>
         </div>
       </footer>
     </div>
