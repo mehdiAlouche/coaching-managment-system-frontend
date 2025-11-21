@@ -40,8 +40,19 @@ export interface Session {
   _id: string;
   organizationId: string;
   coachId: string | User;
-  entrepreneurId: string | User;
-  managerId: string;
+  entrepreneur: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    startupName?: string;
+  };
+  manager: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   scheduledAt: string; // ISO
   endTime: string; // ISO
   duration: number; // in minutes
@@ -49,6 +60,7 @@ export interface Session {
   agendaItems: AgendaItem[];
   notes: Record<string, any>; // notes is an object
   location?: string;
+  videoConferenceUrl?: string;
 }
 
 export interface AgendaItem {

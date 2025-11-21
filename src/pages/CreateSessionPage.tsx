@@ -52,7 +52,7 @@ export default function CreateSessionPage() {
       enabled: !!orgId,
     })
  
-  // Set managerId automatically when user changes
+  // Set manager automatically when user changes
   useEffect(() => {
     if (user && user._id && formData.managerId !== user._id) {
       setFormData(f => ({ ...f, managerId: user._id }))
@@ -69,11 +69,15 @@ export default function CreateSessionPage() {
         endTime: endDate.toISOString(),
       }
       const response = await apiClient.post(endpoints.sessions.create, payload)
-      return response.data.data
+      return response.data
     },
     onSuccess: (session) => {
       showSuccess("Session created successfully!")
-      navigate({ to: "/sessions/$id", params: { id: session._id } })
+      if (session?._id) {
+        navigate({ to: "/sessions/$id", params: { id: session._id } })
+      } else {
+        navigate({ to: "/sessions" })
+      }
     },
     onError: (error) => {
       handleError(error)
@@ -87,9 +91,10 @@ export default function CreateSessionPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === "number" ? Number(value) : value,
     })
   }
 
