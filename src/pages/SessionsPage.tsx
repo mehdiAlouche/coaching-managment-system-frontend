@@ -2,9 +2,14 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { apiClient, endpoints } from "../services"
-import type { Session, PaginatedResponse } from "../models"
+import type { Session, PaginatedResponse, User } from "../models"
 
 type FilterStatus = "all" | "scheduled" | "completed" | "cancelled" | "no_show" | "rescheduled"
+
+// Helper function to check if a value is a User object
+function isUser(value: string | User): value is User {
+  return typeof value === "object" && value !== null && "_id" in value
+}
 
 export default function SessionsPage() {
   const [page, setPage] = useState(1)
@@ -39,30 +44,30 @@ export default function SessionsPage() {
   const totalPages = meta ? Math.ceil(meta.total / meta.limit) : 1
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Sessions</h1>
+          <h1 className="text-4xl font-bold text-foreground">Sessions</h1>
           <Link
             to="/sessions/create"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg transition"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg transition"
           >
             + Create Session
           </Link>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-card rounded-lg shadow-md p-6 mb-8 border border-border">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Filter by Status</label>
               <select
                 value={filter}
                 onChange={(e) => {
                   setFilter(e.target.value as FilterStatus)
                   setPage(1)
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="all">All Status</option>
                 <option value="scheduled">Scheduled</option>
@@ -74,14 +79,14 @@ export default function SessionsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Sort by</label>
               <select
                 value={sort}
                 onChange={(e) => {
                   setSort(e.target.value)
                   setPage(1)
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="-scheduledAt">Date (Newest)</option>
                 <option value="scheduledAt">Date (Oldest)</option>
@@ -92,7 +97,7 @@ export default function SessionsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Quick Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Quick Filter</label>
               <div className="flex items-center h-10">
                 <input
                   type="checkbox"
@@ -102,9 +107,9 @@ export default function SessionsPage() {
                     setUpcomingOnly(e.target.checked)
                     setPage(1)
                   }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-primary border-input rounded focus:ring-ring"
                 />
-                <label htmlFor="upcoming" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="upcoming" className="ml-2 text-sm text-muted-foreground">
                   Upcoming sessions only
                 </label>
               </div>
@@ -114,15 +119,15 @@ export default function SessionsPage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="bg-white p-12 rounded-lg shadow-md text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Loading sessions...</p>
+          <div className="bg-card p-12 rounded-lg shadow-md text-center border border-border">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="text-muted-foreground">Loading sessions...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 p-6 rounded-lg shadow-md text-red-700 border border-red-200">
+          <div className="bg-destructive/10 p-6 rounded-lg shadow-md text-destructive border border-destructive/20">
             <p className="font-semibold">Error loading sessions</p>
             <p className="text-sm mt-2">Please try refreshing the page</p>
           </div>
@@ -130,11 +135,11 @@ export default function SessionsPage() {
 
         {/* Empty State */}
         {!isLoading && !error && sessions.length === 0 && (
-          <div className="bg-white p-12 rounded-lg shadow-md text-center">
-            <p className="text-gray-600 mb-6">No sessions found</p>
+          <div className="bg-card p-12 rounded-lg shadow-md text-center border border-border">
+            <p className="text-muted-foreground mb-6">No sessions found</p>
             <Link
               to="/sessions/create"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg"
+              className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg"
             >
               Create your first session
             </Link>
@@ -152,16 +157,16 @@ export default function SessionsPage() {
 
             {/* Pagination */}
             {meta && totalPages > 1 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-card rounded-lg shadow-md p-6 border border-border">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} sessions
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 border border-input rounded-lg hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -182,8 +187,8 @@ export default function SessionsPage() {
                             key={pageNum}
                             onClick={() => setPage(pageNum)}
                             className={`px-4 py-2 rounded-lg ${page === pageNum
-                              ? "bg-blue-600 text-white"
-                              : "border border-gray-300 hover:bg-gray-50"
+                              ? "bg-primary text-primary-foreground"
+                              : "border border-input hover:bg-accent hover:text-accent-foreground"
                               }`}
                           >
                             {pageNum}
@@ -194,7 +199,7 @@ export default function SessionsPage() {
                     <button
                       onClick={() => setPage(page + 1)}
                       disabled={page === totalPages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 border border-input rounded-lg hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>
@@ -211,11 +216,11 @@ export default function SessionsPage() {
 
 function SessionCard({ session }: { session: Session }) {
   const statusColors = {
-    scheduled: "bg-blue-100 text-blue-800 border-blue-300",
-    completed: "bg-green-100 text-green-800 border-green-300",
-    cancelled: "bg-red-100 text-red-800 border-red-300",
-    no_show: "bg-orange-100 text-orange-800 border-orange-300",
-    rescheduled: "bg-purple-100 text-purple-800 border-purple-300",
+    scheduled: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    completed: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+    cancelled: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    no_show: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
+    rescheduled: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
   }
 
   const scheduledDate = new Date(session.scheduledAt)
@@ -226,21 +231,21 @@ function SessionCard({ session }: { session: Session }) {
     <Link
       to="/sessions/$id"
       params={{ id: session._id }}
-      className="bg-white rounded-lg shadow hover:shadow-lg transition p-6 border-l-4 border-blue-500"
+      className="bg-card rounded-lg shadow hover:shadow-lg transition p-6 border-l-4 border-primary"
     >
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-900 mb-1">
+          <h3 className="text-xl font-semibold text-foreground mb-1">
             Coaching Session
           </h3>
-          <p className="text-sm text-gray-500">ID: {session._id.slice(-8)}</p>
+          <p className="text-sm text-muted-foreground">ID: {session._id.slice(-8)}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[session.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800 border-gray-300"}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[session.status as keyof typeof statusColors] || "bg-muted text-muted-foreground border-border"}`}>
             {session.status.replace("_", " ").toUpperCase()}
           </span>
           {isUpcoming && (
-            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
+            <span className="px-2 py-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 text-xs font-medium rounded border border-yellow-500/20">
               Upcoming
             </span>
           )}
@@ -248,7 +253,7 @@ function SessionCard({ session }: { session: Session }) {
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-muted-foreground">
           <span className="mr-3">📅</span>
           {scheduledDate.toLocaleDateString()} at{" "}
           {scheduledDate.toLocaleTimeString([], {
@@ -261,31 +266,37 @@ function SessionCard({ session }: { session: Session }) {
             minute: "2-digit",
           })}
         </div>
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-muted-foreground">
           <span className="mr-3">⏱️</span>
           {session.duration} minutes
         </div>
         {session.location && (
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-muted-foreground">
             <span className="mr-3">📍</span>
             {session.location}
           </div>
         )}
         {session.agendaItems && session.agendaItems.length > 0 && (
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-muted-foreground">
             <span className="mr-3">📋</span>
             {session.agendaItems.length} agenda {session.agendaItems.length === 1 ? "item" : "items"}
           </div>
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
           <div>
-            <span className="font-medium">Coach:</span> {session.coachId}
+            <span className="font-medium">Coach:</span>{" "}
+            {isUser(session.coachId)
+              ? `${session.coachId.firstName} ${session.coachId.lastName}`
+              : session.coachId}
           </div>
           <div>
-            <span className="font-medium">Entrepreneur:</span> {session.entrepreneurId}
+            <span className="font-medium">Entrepreneur:</span>{" "}
+            {isUser(session.entrepreneurId)
+              ? `${session.entrepreneurId.firstName} ${session.entrepreneurId.lastName}`
+              : session.entrepreneurId}
           </div>
         </div>
       </div>

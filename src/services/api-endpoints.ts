@@ -28,6 +28,8 @@ const endpoints = {
   sessions: {
     list: import.meta.env.VITE_API_ENDPOINT_SESSIONS_LIST || '/sessions',
     create: import.meta.env.VITE_API_ENDPOINT_SESSIONS_CREATE || '/sessions',
+    conflictCheck: import.meta.env.VITE_API_ENDPOINT_SESSIONS_CONFLICT_CHECK || '/sessions/check-conflict',
+    calendar: import.meta.env.VITE_API_ENDPOINT_SESSIONS_CALENDAR || '/sessions/calendar',
 
     get: (sessionId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_GET || '/sessions/:sessionId'
@@ -49,6 +51,16 @@ const endpoints = {
       return replaceParams(template, { sessionId })
     },
 
+    statusUpdate: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_STATUS_UPDATE || '/sessions/:sessionId/status'
+      return replaceParams(template, { sessionId })
+    },
+
+    rate: (sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_RATE || '/sessions/:sessionId/rating'
+      return replaceParams(template, { sessionId })
+    },
+
     // Session Notes
     notes: {
       list: (sessionId: string) => {
@@ -58,6 +70,11 @@ const endpoints = {
       },
       create: (sessionId: string) => {
         const template = import.meta.env.VITE_API_ENDPOINT_SESSION_NOTES_CREATE ||
+          '/sessions/:sessionId/notes'
+        return replaceParams(template, { sessionId })
+      },
+      patch: (sessionId: string) => {
+        const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_NOTES_PATCH ||
           '/sessions/:sessionId/notes'
         return replaceParams(template, { sessionId })
       }
@@ -78,6 +95,10 @@ const endpoints = {
 
     revenue: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_REVENUE ||
       '/dashboard/revenue',
+
+    manager: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_MANAGER || '/dashboard/manager',
+    coach: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_COACH || '/dashboard/coach',
+    entrepreneur: import.meta.env.VITE_API_ENDPOINT_DASHBOARD_ENTREPRENEUR || '/dashboard/entrepreneur',
   },
 
   // ─────────────────────────────────────────
@@ -104,6 +125,11 @@ const endpoints = {
 
     delete: (userId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_USERS_DELETE || '/users/:userId'
+      return replaceParams(template, { userId })
+    },
+
+    rolePatch: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_ROLE_PATCH || '/users/:userId/role'
       return replaceParams(template, { userId })
     },
   },
@@ -134,6 +160,31 @@ const endpoints = {
       const template = import.meta.env.VITE_API_ENDPOINT_GOALS_DELETE || '/goals/:goalId'
       return replaceParams(template, { goalId })
     },
+
+    progressUpdate: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_PROGRESS_UPDATE || '/goals/:goalId/progress'
+      return replaceParams(template, { goalId })
+    },
+
+    milestoneStatus: (goalId: string, milestoneId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_MILESTONE_STATUS || '/goals/:goalId/milestones/:milestoneId'
+      return replaceParams(template, { goalId, milestoneId })
+    },
+
+    addComment: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_ADD_COMMENT || '/goals/:goalId/comments'
+      return replaceParams(template, { goalId })
+    },
+
+    addCollaborator: (goalId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_ADD_COLLABORATOR || '/goals/:goalId/collaborators'
+      return replaceParams(template, { goalId })
+    },
+
+    linkSession: (goalId: string, sessionId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_GOALS_LINK_SESSION || '/goals/:goalId/sessions/:sessionId'
+      return replaceParams(template, { goalId, sessionId })
+    },
   },
 
   // ─────────────────────────────────────────
@@ -142,6 +193,8 @@ const endpoints = {
   payments: {
     list: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_LIST || '/payments',
     create: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_CREATE || '/payments',
+    generate: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_GENERATE || '/payments/generate',
+    stats: import.meta.env.VITE_API_ENDPOINT_PAYMENTS_STATS || '/payments/stats',
 
     get: (paymentId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_GET || '/payments/:paymentId'
@@ -150,6 +203,26 @@ const endpoints = {
 
     update: (paymentId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_UPDATE || '/payments/:paymentId'
+      return replaceParams(template, { paymentId })
+    },
+
+    patch: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_PATCH || '/payments/:paymentId'
+      return replaceParams(template, { paymentId })
+    },
+
+    markPaid: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_MARK_PAID || '/payments/:paymentId/mark-paid'
+      return replaceParams(template, { paymentId })
+    },
+
+    invoiceDownload: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_INVOICE_DOWNLOAD || '/payments/:paymentId/invoice/download'
+      return replaceParams(template, { paymentId })
+    },
+
+    invoiceSend: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_INVOICE_SEND || '/payments/:paymentId/invoice/send'
       return replaceParams(template, { paymentId })
     },
   },
@@ -249,12 +322,27 @@ const endpoints = {
   // ─────────────────────────────────────────
   notifications: {
     list: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_LIST || '/notifications',
+    unreadCount: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_UNREAD_COUNT || '/notifications/unread-count',
+    markAllRead: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_MARK_ALL_READ || '/notifications/mark-all-read',
+
+    read: (notificationId: string) => {
+      const template =
+        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_READ ||
+        '/notifications/:notificationId/read'
+      return replaceParams(template, { notificationId })
+    },
 
     markRead: (notificationId: string) => {
       const template =
-        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_MARK_READ ||
+        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_READ ||
         '/notifications/:notificationId/read'
+      return replaceParams(template, { notificationId })
+    },
 
+    delete: (notificationId: string) => {
+      const template =
+        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_DELETE ||
+        '/notifications/:notificationId'
       return replaceParams(template, { notificationId })
     }
   },
@@ -265,6 +353,7 @@ const endpoints = {
   me: {
     sessions: import.meta.env.VITE_API_ENDPOINT_ME_SESSIONS || '/me/sessions',
     goals: import.meta.env.VITE_API_ENDPOINT_ME_GOALS || '/me/goals',
+    startup: import.meta.env.VITE_API_ENDPOINT_ME_STARTUP || '/me/startup',
     startups: import.meta.env.VITE_API_ENDPOINT_ME_STARTUPS || '/me/startups',
     payments: import.meta.env.VITE_API_ENDPOINT_ME_PAYMENTS || '/me/payments',
     notifications: import.meta.env.VITE_API_ENDPOINT_ME_NOTIFICATIONS || '/me/notifications',
@@ -274,7 +363,7 @@ const endpoints = {
   // SEARCH
   // ─────────────────────────────────────────
   search: {
-    global: import.meta.env.VITE_API_ENDPOINT_SEARCH_GLOBAL || '/search',
+    global: import.meta.env.VITE_API_ENDPOINT_SEARCH || '/search',
   }
 } as const
 

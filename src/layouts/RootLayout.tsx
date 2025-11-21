@@ -1,5 +1,6 @@
 import { Outlet } from '@tanstack/react-router'
 import { useAuth } from '../context/AuthContext'
+import { Toaster } from '../components/ui/toaster'
 
 export function RootLayout() {
   const { isLoading } = useAuth()
@@ -17,6 +18,11 @@ export function RootLayout() {
     )
   }
 
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      <Toaster />
+    </>
+  )
 }
 

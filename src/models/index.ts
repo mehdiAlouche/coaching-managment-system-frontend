@@ -39,8 +39,8 @@ export interface AuthLoginResponse {
 export interface Session {
   _id: string;
   organizationId: string;
-  coachId: string;
-  entrepreneurId: string;
+  coachId: string | User;
+  entrepreneurId: string | User;
   managerId: string;
   scheduledAt: string; // ISO
   endTime: string; // ISO

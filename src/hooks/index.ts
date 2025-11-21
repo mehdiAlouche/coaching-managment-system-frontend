@@ -7,4 +7,6 @@ export { useSessions } from './useSessions'
 export { useUsers } from './useUsers'
 export { usePayments } from './usePayments'
 export { useGoals } from './useGoals'
+export { useErrorHandler } from './useErrorHandler'
+export { useToast } from './use-toast'
 

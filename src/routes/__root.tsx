@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '../components/theme/theme-provider'
 import { AuthProvider } from '../context/AuthContext'
 import { useAuth } from '../context/AuthContext'
+import { Toaster } from '../components/ui/toaster'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,8 @@ export const Route = createRootRoute({
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <AuthProvider>
           <RootComponent />
+          {/* Global toaster so all routes (including /auth/login) can show toasts */}
+          <Toaster />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -3,13 +3,31 @@ import { createContext, useContext, useState, useEffect } from "react"
 import { apiClient, endpoints } from "../services"
 import type { UserRole } from "../lib/rbac"
 import { hasRole as rbacHasRole } from "../lib/rbac"
+import { User } from "@/models"
 
-interface User {
-  id: string
-  email: string
-  name: string
-  role: UserRole
+// Normalize backend user structures into our User model
+function normalizeUser(raw: any): User | null {
+  if (!raw || typeof raw !== 'object') return null
+  // Backend may return user with _id, firstName/lastName, role, email, etc.
+  // Ensure required fields exist; fall back gracefully.
+  return {
+    _id: raw._id || raw.id || '',
+    email: raw.email || '',
+    role: raw.role || raw.userRole || '',
+    firstName: raw.firstName || raw.name?.split(' ')[0] || raw.first_name || '',
+    lastName: raw.lastName || raw.name?.split(' ').slice(1).join(' ') || raw.last_name || '',
+    organizationId: raw.organizationId || raw.orgId || raw.organization?._id || raw.organization?.id || '',
+    hourlyRate: raw.hourlyRate,
+    startupName: raw.startupName,
+    phone: raw.phone,
+    timezone: raw.timezone,
+    isActive: raw.isActive !== undefined ? raw.isActive : true,
+    createdAt: raw.createdAt || '',
+    updatedAt: raw.updatedAt || '',
+  }
 }
+
+
 
 interface AuthContextType {
   user: User | null
@@ -38,10 +56,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const response = await apiClient.get(endpoints.auth.me, {
             headers: { Authorization: `Bearer ${token}` },
           })
-          setUser(response.data.user)
-          setIsAuthenticated(true)
-          if (response.data?.user?.role) {
-            localStorage.setItem("auth_role", response.data.user.role)
+          const normalized = normalizeUser(response.data.user)
+          if (normalized) {
+            setUser(normalized)
+            setIsAuthenticated(true)
+            if (normalized.role) {
+              localStorage.setItem("auth_role", normalized.role)
+            }
+          } else {
+            // Fallback: invalid shape, clear auth
+            localStorage.removeItem("auth_token")
+            localStorage.removeItem("auth_role")
+            setUser(null)
+            setIsAuthenticated(false)
           }
         } catch (error) {
           localStorage.removeItem("auth_token")
@@ -58,8 +85,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await apiClient.post(endpoints.auth.login, { email, password })
-    const { token, user } = response.data
+    // Support both { token, user } and { success, data: { token, user } }
+    const container = response.data?.data ? response.data.data : response.data
+    const token = container?.token
+    const rawUser = container?.user
+    const user = normalizeUser(rawUser)
 
+    if (!token || !user) {
+      throw new Error('Malformed login response: missing token or user')
+    }
     // persist token and role
     localStorage.setItem("auth_token", token)
     if (user?.role) {
@@ -80,7 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, password: string, role: string) => {
     const response = await apiClient.post(endpoints.auth.register, { name, email, password, role })
-    const { token, user } = response.data
+    const container = response.data?.data ? response.data.data : response.data
+    const token = container?.token
+    const rawUser = container?.user
+    const user = normalizeUser(rawUser)
+
+    if (!token || !user) {
+      throw new Error('Malformed register response: missing token or user')
+    }
 
     localStorage.setItem("auth_token", token)
     if (user?.role) {
