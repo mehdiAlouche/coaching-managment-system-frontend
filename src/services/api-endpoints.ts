@@ -18,7 +18,6 @@ const endpoints = {
   // ─────────────────────────────────────────
   auth: {
     login: import.meta.env.VITE_API_ENDPOINT_AUTH_LOGIN || '/auth/login',
-    register: import.meta.env.VITE_API_ENDPOINT_AUTH_REGISTER || '/auth/register',
     me: import.meta.env.VITE_API_ENDPOINT_AUTH_ME || '/auth/me',
   },
 
@@ -132,6 +131,21 @@ const endpoints = {
       const template = import.meta.env.VITE_API_ENDPOINT_USERS_ROLE_PATCH || '/users/:userId/role'
       return replaceParams(template, { userId })
     },
+
+    sessions: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_SESSIONS || '/users/:userId/sessions'
+      return replaceParams(template, { userId })
+    },
+
+    goals: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_GOALS || '/users/:userId/goals'
+      return replaceParams(template, { userId })
+    },
+
+    payments: (userId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_USERS_PAYMENTS || '/users/:userId/payments'
+      return replaceParams(template, { userId })
+    },
   },
 
   // ─────────────────────────────────────────
@@ -221,8 +235,8 @@ const endpoints = {
       return replaceParams(template, { paymentId })
     },
 
-    invoiceSend: (paymentId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_INVOICE_SEND || '/payments/:paymentId/invoice/send'
+    send: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_SEND || '/payments/:paymentId/send'
       return replaceParams(template, { paymentId })
     },
   },

@@ -5,6 +5,7 @@ import { getDashboardRoute } from '../../lib/dashboard-routes'
 import { Input } from '../../components/ui/input'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
+import { Checkbox } from '../../components/ui/checkbox'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { useErrorHandler } from '../../hooks/useErrorHandler'
 
@@ -16,10 +17,11 @@ function LoginPage() {
   const { login, isAuthenticated, user } = useAuth()
   const navigate = Route.useNavigate()
   const { handleError, showSuccess } = useErrorHandler()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberEmail') || '')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberEmail'))
   const redirectedRef = useRef(false)
 
   // Redirect away if already authenticated (avoid loop & beforeLoad throttle warning)
@@ -36,6 +38,14 @@ function LoginPage() {
 
     try {
       const loggedInUser = await login(email, password)
+      
+      // Handle Remember Me
+      if (rememberMe) {
+        localStorage.setItem('rememberEmail', email)
+      } else {
+        localStorage.removeItem('rememberEmail')
+      }
+      
       const displayName = `${loggedInUser.firstName || ''} ${loggedInUser.lastName || ''}`.trim() || loggedInUser.email
       showSuccess('Welcome back!', `Logged in as ${displayName}`)
       navigate({ to: getDashboardRoute(loggedInUser.role), replace: true })
@@ -109,6 +119,20 @@ function LoginPage() {
                 </div>
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="rememberMe" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <label
+                  htmlFor="rememberMe"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Remember me
+                </label>
+              </div>
+
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -124,15 +148,12 @@ function LoginPage() {
                 )}
               </Button>
             </form>
-
             <div className="mt-6 pt-6 border-t">
               <p className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/auth/register" className="font-semibold text-primary hover:underline">
-                  Create one
-                </Link>
+                Accounts are provisioned by your organization. Please contact your manager or administrator.
               </p>
             </div>
+          
           </CardContent>
         </Card>
 

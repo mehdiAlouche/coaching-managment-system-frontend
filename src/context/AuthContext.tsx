@@ -35,7 +35,7 @@ interface AuthContextType {
   isLoading: boolean
   // return the user object so callers can use the role immediately after login/register
   login: (email: string, password: string) => Promise<User>
-  register: (name: string, email: string, password: string, role: string) => Promise<User>
+ // register: (name: string, email: string, password: string, role: string) => Promise<User>
   logout: () => void
   hasRole: (...roles: UserRole[]) => boolean
 }
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return user
   }
 
-  const register = async (name: string, email: string, password: string, role: string) => {
+  /*const register = async (name: string, email: string, password: string, role: string) => {
     const response = await apiClient.post(endpoints.auth.register, { name, email, password, role })
     const container = response.data?.data ? response.data.data : response.data
     const token = container?.token
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true)
 
     return user
-  }
+  }*/
 
   const logout = () => {
     localStorage.removeItem("auth_token")
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return rbacHasRole({ role: user.role }, ...roles)
   }
 
-  return <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, hasRole }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, hasRole }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

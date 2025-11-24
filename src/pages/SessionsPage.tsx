@@ -14,7 +14,7 @@ function isUser(value: string | User): value is User {
 
 export default function SessionsPage() {
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(5)
   const [sort, setSort] = useState("-scheduledAt")
   const [filter, setFilter] = useState<FilterStatus>("all")
   const [upcomingOnly, setUpcomingOnly] = useState(false)

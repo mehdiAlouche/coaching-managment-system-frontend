@@ -2,153 +2,287 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { apiClient, endpoints } from "../services"
-import type { SessionDetailed as Session } from "../models"
+import type { Session } from "../models"
+import { useAuth } from "../context/AuthContext"
+import { useErrorHandler } from "../hooks/useErrorHandler"
+
+interface CalendarData {
+  calendar: Record<string, Session[]>
+  month: number
+  year: number
+  total: number
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  scheduled: "bg-blue-500 hover:bg-blue-600",
+  rescheduled: "bg-yellow-500 hover:bg-yellow-600",
+  in_progress: "bg-indigo-500 hover:bg-indigo-600",
+  completed: "bg-green-600 hover:bg-green-700",
+  cancelled: "bg-red-500 hover:bg-red-600",
+  no_show: "bg-orange-500 hover:bg-orange-600",
+}
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const today = new Date()
+  const [month, setMonth] = useState<number>(today.getMonth() + 1) // 1-12
+  const [year, setYear] = useState<number>(today.getFullYear())
+  const [status, setStatus] = useState<string>("")
+  const [coachId, setCoachId] = useState<string>("")
+  const [entrepreneurId, setEntrepreneurId] = useState<string>("")
 
-  const { data: sessions = [] } = useQuery<Session[]>({
-    queryKey: ["sessions"],
+  const { user } = useAuth()
+  const orgId = user?.organizationId || ""
+  const { handleError } = useErrorHandler()
+
+  // Fetch coaches
+  const { data: coaches = [] } = useQuery({
+    queryKey: ["coaches", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const response = await apiClient.get(endpoints.sessions.list)
-      return response.data.data
-    },
+      const res = await apiClient.get(endpoints.coaches.list, { params: { organizationId: orgId } })
+      return Array.isArray(res.data.data) ? res.data.data : []
+    }
   })
 
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
-
-  const monthName = currentDate.toLocaleString("default", {
-    month: "long",
-    year: "numeric",
+  // Fetch entrepreneurs
+  const { data: entrepreneurs = [] } = useQuery({
+    queryKey: ["entrepreneurs", orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const res = await apiClient.get(endpoints.entrepreneurs.list, { params: { organizationId: orgId } })
+      return Array.isArray(res.data.data) ? res.data.data : []
+    }
   })
 
-  const daysInMonth = getDaysInMonth(currentDate)
-  const firstDay = getFirstDayOfMonth(currentDate)
+  // Calendar query
+  const { data: calendarData, isLoading, error } = useQuery<CalendarData>({
+    queryKey: ["calendar", month, year, coachId, entrepreneurId, status],
+    queryFn: async () => {
+      const res = await apiClient.get(endpoints.sessions.calendar, {
+        params: {
+          month,
+          year,
+          coachId: coachId || undefined,
+          entrepreneurId: entrepreneurId || undefined,
+          status: status || undefined,
+          view: "month",
+        }
+      })
+      return res.data.data as CalendarData
+    }
+  })
 
-  const getSessionsForDate = (day: number) => {
-    const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split("T")[0]
-
-    return sessions.filter((session) => session.startTime.startsWith(dateStr))
+  if (error) {
+    handleError(error)
   }
+
+  const calendar = calendarData?.calendar || {}
+
+  const monthName = new Date(year, month - 1).toLocaleString("default", { month: "long", year: "numeric" })
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const firstWeekday = new Date(year, month - 1, 1).getDay() // 0-6
 
   const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))
+    if (month === 1) {
+      setMonth(12); setYear(y => y - 1)
+    } else {
+      setMonth(m => m - 1)
+    }
   }
-
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))
+    if (month === 12) {
+      setMonth(1); setYear(y => y + 1)
+    } else {
+      setMonth(m => m + 1)
+    }
   }
 
-  const days = []
-  for (let i = 0; i < firstDay; i++) {
-    days.push(null)
+  const days: (number | null)[] = []
+  for (let i = 0; i < firstWeekday; i++) days.push(null)
+  for (let d = 1; d <= daysInMonth; d++) days.push(d)
+
+  const getSessionsForDay = (day: number): Session[] => {
+    const isoDate = new Date(year, month - 1, day).toISOString().split("T")[0]
+    return calendar[isoDate] || []
   }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i)
-  }
+
+  const YEARS_RANGE = Array.from({ length: 5 }, (_, i) => today.getFullYear() - 2 + i)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Calendar View</h1>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 className="text-3xl font-bold text-foreground mb-6">Calendar View</h1>
+
+        {/* Filters */}
+        <div className="bg-card border border-border rounded-lg p-4 mb-8 grid gap-4 md:grid-cols-6">
+          <div className="flex flex-col">
+            <label className="text-xs font-medium text-muted-foreground mb-1">Month</label>
+            <select
+              value={month}
+              onChange={e => setMonth(Number(e.target.value))}
+              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <option key={m} value={m}>{new Date(year, m - 1).toLocaleString('default', { month: 'long' })}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-medium text-muted-foreground mb-1">Year</label>
+            <select
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+            >
+              {YEARS_RANGE.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-medium text-muted-foreground mb-1">Status</label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+            >
+              <option value="">All</option>
+              {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-medium text-muted-foreground mb-1">Coach</label>
+            <select
+              value={coachId}
+              onChange={e => setCoachId(e.target.value)}
+              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+            >
+              <option value="">All</option>
+              {(coaches as any[]).map(c => (
+                <option key={c._id} value={c._id}>{c.firstName} {c.lastName}</option>
+              ))}
+            </select>
+          </div>
+            <div className="flex flex-col">
+            <label className="text-xs font-medium text-muted-foreground mb-1">Entrepreneur</label>
+            <select
+              value={entrepreneurId}
+              onChange={e => setEntrepreneurId(e.target.value)}
+              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+            >
+              <option value="">All</option>
+              {(entrepreneurs as any[]).map(e => (
+                <option key={e._id} value={e._id}>{e.firstName} {e.lastName}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="px-3 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80"
+            >Prev</button>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="px-3 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80"
+            >Next</button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{monthName}</h2>
+            <div className="bg-card rounded-lg border border-border p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-foreground">{monthName}</h2>
                 <div className="flex gap-2">
-                  <button onClick={prevMonth} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition">
-                    ← Prev
-                  </button>
-                  <button onClick={nextMonth} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition">
-                    Next →
-                  </button>
+                  <button onClick={prevMonth} className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80">← Prev</button>
+                  <button onClick={nextMonth} className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80">Next →</button>
                 </div>
               </div>
 
               <div className="grid grid-cols-7 gap-2 mb-2">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="text-center font-semibold text-gray-600 py-2">
-                    {day}
-                  </div>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                  <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
-                {days.map((day, index) => {
-                  const daysSessions = day ? getSessionsForDate(day) : []
-                  return (
-                    <div
-                      key={index}
-                      className={`aspect-square rounded-lg border-2 p-2 overflow-hidden ${
-                        day === null
-                          ? "bg-gray-50 border-gray-100"
-                          : daysSessions.length > 0
-                            ? "bg-blue-50 border-blue-300"
-                            : "bg-white border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      {day && (
-                        <div className="h-full flex flex-col">
-                          <span className="text-sm font-semibold text-gray-900 mb-1">{day}</span>
-                          {daysSessions.length > 0 && (
-                            <div className="flex-1 space-y-1">
-                              {daysSessions.slice(0, 2).map((session) => (
-                                <Link
-                                  key={session.id}
-                                  to="/sessions/$id"
-                                  params={{ id: session.id }}
-                                  className="block text-xs bg-blue-500 text-white px-1 py-0.5 rounded truncate hover:bg-blue-600"
-                                  title={session.title}
-                                >
-                                  {session.title}
-                                </Link>
-                              ))}
-                              {daysSessions.length > 2 && (
-                                <div className="text-xs text-gray-600">+{daysSessions.length - 2} more</div>
-                              )}
-                            </div>
+              {isLoading && (
+                <div className="grid grid-cols-7 gap-2 animate-pulse">
+                  {Array.from({ length: 42 }).map((_, i) => (
+                    <div key={i} className="aspect-square rounded-md bg-muted/30" />
+                  ))}
+                </div>
+              )}
+
+              {!isLoading && (
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map((day, idx) => {
+                    if (day === null) return <div key={idx} className="aspect-square" />
+                    const daySessions = getSessionsForDay(day)
+                    return (
+                      <div
+                        key={idx}
+                        className={`aspect-square rounded-md border border-border p-1 flex flex-col ${daySessions.length ? 'bg-accent/30' : 'bg-background hover:bg-accent/10'} transition`}
+                      >
+                        <span className="text-xs font-semibold text-foreground mb-1">{day}</span>
+                        <div className="flex-1 space-y-1 overflow-hidden">
+                          {daySessions.slice(0, 3).map(session => {
+                            const color = STATUS_COLORS[session.status] || 'bg-primary hover:bg-primary/80'
+                            const label = session.entrepreneur?.firstName ? `${session.entrepreneur.firstName}` : 'Session'
+                            return (
+                              <Link
+                                key={session._id}
+                                to="/sessions/$id"
+                                params={{ id: session._id }}
+                                className={`block text-[10px] leading-tight text-white px-1 py-0.5 rounded ${color} truncate`}
+                                title={`${label} • ${session.status}`}
+                              >
+                                {label}
+                              </Link>
+                            )
+                          })}
+                          {daySessions.length > 3 && (
+                            <div className="text-[10px] text-muted-foreground">+{daySessions.length - 3} more</div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Upcoming Sessions Sidebar */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Upcoming Sessions</h3>
-
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {sessions
-                .filter((s) => new Date(s.startTime) > new Date())
-                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-                .slice(0, 10)
-                .map((session) => (
-                  <Link
-                    key={session.id}
-                    to="/sessions/$id"
-                    params={{ id: session.id }}
-                    className="block p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition border-l-2 border-blue-500"
-                  >
-                    <p className="font-semibold text-gray-900 text-sm">{session.title}</p>
-                    <p className="text-xs text-gray-600 mt-1">{new Date(session.startTime).toLocaleString()}</p>
-                  </Link>
-                ))}
-
-              {sessions.filter((s) => new Date(s.startTime) > new Date()).length === 0 && (
-                <p className="text-center text-gray-600 py-8">No upcoming sessions</p>
+          {/* Upcoming Sessions */}
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Upcoming Sessions</h3>
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              {Object.values(calendar)
+                .flat()
+                .filter(s => new Date(s.scheduledAt) > new Date())
+                .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+                .slice(0, 12)
+                .map(s => {
+                  const color = STATUS_COLORS[s.status] || 'bg-primary'
+                  return (
+                    <Link
+                      key={s._id}
+                      to="/sessions/$id"
+                      params={{ id: s._id }}
+                      className="block rounded-md border border-border bg-muted/30 hover:bg-muted/50 transition p-2"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-foreground truncate">{s.entrepreneur?.firstName || 'Session'}</span>
+                        <span className={`ml-2 text-[10px] text-white px-1 py-0.5 rounded ${color}`}>{s.status.replace('_',' ')}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {new Date(s.scheduledAt).toLocaleString()}
+                      </div>
+                    </Link>
+                  )
+                })}
+              {Object.values(calendar).flat().filter(s => new Date(s.scheduledAt) > new Date()).length === 0 && (
+                <p className="text-sm text-muted-foreground py-8 text-center">No upcoming sessions</p>
               )}
             </div>
           </div>
