@@ -17,6 +17,11 @@ export default function GoalCard({ goal, onClick }: GoalCardProps) {
     const deadline = goal.targetDate
     const isLate = deadline && isOverdue(deadline) && !isComplete
 
+    // Handle populated entrepreneur (could be string ID or object)
+    const entrepreneurName = typeof goal.entrepreneurId === 'string' 
+        ? goal.entrepreneurId 
+        : `${(goal.entrepreneurId as any)?.firstName || ''} ${(goal.entrepreneurId as any)?.lastName || ''}`.trim() || (goal.entrepreneurId as any)?._id || 'N/A'
+
     const priorityColors: Record<string, string> = {
         low: 'bg-blue-100 text-blue-800 border-blue-300',
         medium: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -69,10 +74,10 @@ export default function GoalCard({ goal, onClick }: GoalCardProps) {
                     />
                 </div>
 
-                {/* IDs */}
+                {/* Entrepreneur Info */}
                 <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
                     <User className="h-3 w-3" />
-                    <span className="truncate font-mono">{goal.entrepreneurId}</span>
+                    <span className="truncate">{entrepreneurName}</span>
                 </div>
 
                 {/* Deadline */}

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Goal, UserRole } from '../models'
+import { Goal } from '../models'
 import { useAuth } from '../context/AuthContext'
-import { apiClient, endpoints } from '../services'
+import { useGoals, useUpdateGoalProgress } from '../hooks/useGoals'
 import GoalKanbanBoard from '../components/goals/GoalKanbanBoard'
 import GoalDetailsModal from '../components/goals/GoalDetailsModal'
+import CreateGoalModal from '../components/goals/CreateGoalModal'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import {
@@ -17,27 +17,30 @@ import {
 import { Card, CardContent } from '../components/ui/card'
 import { Target, Search, Plus, LayoutGrid, List } from 'lucide-react'
 import GoalCard from '../components/goals/GoalCard'
+import { useToast } from '../hooks/use-toast'
 
 type ViewMode = 'kanban' | 'list'
-type FilterStatus = 'all' | 'not_started' | 'in_progress' | 'completed'
-type FilterPriority = 'all' | 'low' | 'medium' | 'high' | 'critical'
+type FilterStatus = 'all' | 'not_started' | 'in_progress' | 'completed' | 'blocked'
+type FilterPriority = 'all' | 'low' | 'medium' | 'high'
 
 export default function GoalsPage() {
     const { user } = useAuth()
+    const { toast } = useToast()
     const [viewMode, setViewMode] = useState<ViewMode>('kanban')
     const [searchTerm, setSearchTerm] = useState('')
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
     const [filterPriority, setFilterPriority] = useState<FilterPriority>('all')
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-    const { data: goals = [], isLoading } = useQuery<Goal[]>({
-        queryKey: ['goals'],
-        queryFn: async () => {
-            const response = await apiClient.get(endpoints.goals.list)
-            return response.data.data || response.data || []
-        },
-    })
+    // Build query params for API
+    const queryParams: Record<string, string> = {}
+    if (filterStatus !== 'all') queryParams.status = filterStatus
+    if (filterPriority !== 'all') queryParams.priority = filterPriority
+
+    const { data: goals = [], isLoading, refetch } = useGoals(queryParams)
+    const updateProgressMutation = useUpdateGoalProgress()
 
     // Filter goals
     const filteredGoals = goals.filter(goal => {
@@ -51,10 +54,10 @@ export default function GoalsPage() {
     // Role-specific filtering
     const roleFilteredGoals = filteredGoals.filter(goal => {
         if (user?.role === 'entrepreneur') {
-            return goal.entrepreneurId === user.id
+            return goal.entrepreneurId === user._id
         }
         if (user?.role === 'coach') {
-            return goal.coachId === user.id
+            return goal.coachId === user._id
         }
         return true // Manager sees all
     })
@@ -64,10 +67,29 @@ export default function GoalsPage() {
         setIsDetailsOpen(true)
     }
 
-    const handleUpdateProgress = async (goalId: string, progress: number, notes: string) => {
-        // TODO: Implement API call to update goal progress
-        console.log('Update goal:', goalId, progress, notes)
-        setIsDetailsOpen(false)
+    const handleUpdateProgress = async (goalId: string, progress: number) => {
+        try {
+            await updateProgressMutation.mutateAsync({ goalId, progress })
+            toast({
+                title: 'Success',
+                description: 'Goal progress updated successfully',
+            })
+            setIsDetailsOpen(false)
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to update progress',
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const handleCreateSuccess = () => {
+        refetch()
+        toast({
+            title: 'Success',
+            description: 'Goal created successfully',
+        })
     }
 
     if (isLoading) {
@@ -99,8 +121,8 @@ export default function GoalsPage() {
                                         : 'Manage and track all organizational goals'}
                             </p>
                         </div>
-                        {(user?.role === 'manager' || user?.role === 'coach') && (
-                            <Button>
+                        {(user?.role === 'manager' || user?.role === 'coach' || user?.role === 'admin') && (
+                            <Button onClick={() => setIsCreateModalOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create Goal
                             </Button>
@@ -171,6 +193,7 @@ export default function GoalsPage() {
                                     <SelectItem value="not_started">Not Started</SelectItem>
                                     <SelectItem value="in_progress">In Progress</SelectItem>
                                     <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="blocked">Blocked</SelectItem>
                                 </SelectContent>
                             </Select>
 
@@ -184,7 +207,6 @@ export default function GoalsPage() {
                                     <SelectItem value="low">Low</SelectItem>
                                     <SelectItem value="medium">Medium</SelectItem>
                                     <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="critical">Critical</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -222,8 +244,8 @@ export default function GoalsPage() {
                                     ? 'Try adjusting your filters'
                                     : 'Get started by creating your first goal'}
                             </p>
-                            {(user?.role === 'manager' || user?.role === 'coach') && (
-                                <Button>
+                            {(user?.role === 'manager' || user?.role === 'coach' || user?.role === 'admin') && (
+                                <Button onClick={() => setIsCreateModalOpen(true)}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Create Goal
                                 </Button>
@@ -240,13 +262,20 @@ export default function GoalsPage() {
                     </div>
                 )}
 
+                {/* Create Goal Modal */}
+                <CreateGoalModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSuccess={handleCreateSuccess}
+                />
+
                 {/* Goal Details Modal */}
                 <GoalDetailsModal
                     goal={selectedGoal}
                     isOpen={isDetailsOpen}
                     onClose={() => setIsDetailsOpen(false)}
                     onUpdateProgress={handleUpdateProgress}
-                    userRole={user?.role === 'admin' ? UserRole.MANAGER : user?.role}
+                    userRole={user?.role}
                 />
             </div>
         </div>

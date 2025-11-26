@@ -239,28 +239,15 @@ const endpoints = {
       const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_SEND || '/payments/:paymentId/send'
       return replaceParams(template, { paymentId })
     },
-  },
 
-  // ─────────────────────────────────────────
-  // COACHES
-  // ─────────────────────────────────────────
-  coaches: {
-    list: import.meta.env.VITE_API_ENDPOINT_COACHES_LIST || '/coaches',
-    get: (coachId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_COACHES_GET || '/coaches/:coachId'
-      return replaceParams(template, { coachId })
+    invoice: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_INVOICE || '/payments/:paymentId/invoice'
+      return replaceParams(template, { paymentId })
     },
-  },
 
-  // ─────────────────────────────────────────
-  // ENTREPRENEURS
-  // ─────────────────────────────────────────
-  entrepreneurs: {
-    list: import.meta.env.VITE_API_ENDPOINT_ENTREPRENEURS_LIST || '/entrepreneurs',
-    get: (entrepreneurId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_ENTREPRENEURS_GET ||
-        '/entrepreneurs/:entrepreneurId'
-      return replaceParams(template, { entrepreneurId })
+    sendInvoice: (paymentId: string) => {
+      const template = import.meta.env.VITE_API_ENDPOINT_PAYMENTS_SEND_INVOICE || '/payments/:paymentId/send-invoice'
+      return replaceParams(template, { paymentId })
     },
   },
 
@@ -359,18 +346,6 @@ const endpoints = {
         '/notifications/:notificationId'
       return replaceParams(template, { notificationId })
     }
-  },
-
-  // ─────────────────────────────────────────
-  // "ME" Endpoints
-  // ─────────────────────────────────────────
-  me: {
-    sessions: import.meta.env.VITE_API_ENDPOINT_ME_SESSIONS || '/me/sessions',
-    goals: import.meta.env.VITE_API_ENDPOINT_ME_GOALS || '/me/goals',
-    startup: import.meta.env.VITE_API_ENDPOINT_ME_STARTUP || '/me/startup',
-    startups: import.meta.env.VITE_API_ENDPOINT_ME_STARTUPS || '/me/startups',
-    payments: import.meta.env.VITE_API_ENDPOINT_ME_PAYMENTS || '/me/payments',
-    notifications: import.meta.env.VITE_API_ENDPOINT_ME_NOTIFICATIONS || '/me/notifications',
   },
 
   // ─────────────────────────────────────────

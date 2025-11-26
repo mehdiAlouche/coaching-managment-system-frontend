@@ -16,12 +16,14 @@ import {
 } from '../components/ui/select'
 import { DollarSign, Plus, TrendingUp } from 'lucide-react'
 import { formatCompactCurrency } from '../lib/currency'
+import { useToast } from '../hooks/use-toast'
 
 type FilterStatus = 'all' | 'pending' | 'paid' | 'overdue'
 
 export default function PaymentsPage() {
     const { user } = useAuth()
     const queryClient = useQueryClient()
+    const { toast } = useToast()
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
@@ -54,7 +56,7 @@ export default function PaymentsPage() {
     // Role-specific filtering (Client-side fallback, though API should handle it)
     const roleFilteredPayments = filteredPayments.filter(payment => {
         if (user?.role === UserRole.COACH) {
-            return payment.coachId === user.id
+            return payment.coachId === user._id
         }
         return true // Manager sees all
     })
@@ -73,13 +75,51 @@ export default function PaymentsPage() {
     }
 
     const handleDownload = async (paymentId: string) => {
-        // TODO: Implement invoice download
-        console.log('Download invoice:', paymentId)
+        try {
+            const response = await apiClient.get(endpoints.payments.invoice(paymentId), {
+                responseType: 'blob'
+            })
+            
+            // Create a blob URL and trigger download
+            const blob = new Blob([response.data], { type: 'application/pdf' })
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `invoice-${paymentId}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+            
+            toast({
+                title: 'Success',
+                description: 'Invoice downloaded successfully',
+            })
+        } catch (error) {
+            console.error('Download invoice error:', error)
+            toast({
+                title: 'Error',
+                description: 'Failed to download invoice',
+                variant: 'destructive',
+            })
+        }
     }
 
     const handleEmail = async (paymentId: string) => {
-        // TODO: Implement email invoice
-        console.log('Email invoice:', paymentId)
+        try {
+            const response = await apiClient.post(endpoints.payments.sendInvoice(paymentId))
+            toast({
+                title: 'Success',
+                description: response.data.message || 'Invoice sent successfully',
+            })
+        } catch (error) {
+            console.error('Email invoice error:', error)
+            toast({
+                title: 'Error',
+                description: 'Failed to send invoice',
+                variant: 'destructive',
+            })
+        }
     }
 
     if (isLoading) {

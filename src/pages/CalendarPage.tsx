@@ -36,20 +36,20 @@ export default function CalendarPage() {
 
   // Fetch coaches
   const { data: coaches = [] } = useQuery({
-    queryKey: ["coaches", orgId],
+    queryKey: ["users", "coaches", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const res = await apiClient.get(endpoints.coaches.list, { params: { organizationId: orgId } })
+      const res = await apiClient.get(endpoints.users.list, { params: { role: "coach", organizationId: orgId } })
       return Array.isArray(res.data.data) ? res.data.data : []
     }
   })
 
   // Fetch entrepreneurs
   const { data: entrepreneurs = [] } = useQuery({
-    queryKey: ["entrepreneurs", orgId],
+    queryKey: ["users", "entrepreneurs", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const res = await apiClient.get(endpoints.entrepreneurs.list, { params: { organizationId: orgId } })
+      const res = await apiClient.get(endpoints.users.list, { params: { role: "entrepreneur", organizationId: orgId } })
       return Array.isArray(res.data.data) ? res.data.data : []
     }
   })

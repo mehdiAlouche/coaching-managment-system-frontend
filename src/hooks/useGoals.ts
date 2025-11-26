@@ -1,5 +1,5 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query'
-import { apiClient } from '../services'
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query'
+import { apiClient, endpoints } from '../services'
 import type { Goal } from '../models'
 
 type QueryOpts<T> = Omit<UseQueryOptions<T, unknown, T, readonly unknown[]>, 'queryKey' | 'queryFn'>
@@ -11,11 +11,136 @@ export function useGoals(
   return useQuery({
     queryKey: ['goals', 'list', params],
     queryFn: async () => {
-      const res = await apiClient.get('/goals', { params })
+      const res = await apiClient.get(endpoints.goals.list, { params })
       // Handle both wrapped { data: [...] } and direct array responses
       return (Array.isArray(res.data) ? res.data : res.data?.data || []) as Goal[]
     },
     ...(options as object),
+  })
+}
+
+export function useCreateGoal() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (goalData: Partial<Goal>) => {
+      const res = await apiClient.post(endpoints.goals.create, goalData)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useUpdateGoalProgress() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, progress }: { goalId: string; progress: number }) => {
+      const res = await apiClient.patch(endpoints.goals.progressUpdate(goalId), { progress })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useUpdateMilestoneStatus() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ 
+      goalId, 
+      milestoneId, 
+      status, 
+      notes 
+    }: { 
+      goalId: string
+      milestoneId: string
+      status: string
+      notes?: string 
+    }) => {
+      const res = await apiClient.patch(
+        endpoints.goals.milestoneStatus(goalId, milestoneId), 
+        { status, notes }
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useAddGoalComment() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, text }: { goalId: string; text: string }) => {
+      const res = await apiClient.post(endpoints.goals.addComment(goalId), { text })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useAddGoalCollaborator() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, userId, role }: { goalId: string; userId: string; role?: string }) => {
+      const res = await apiClient.post(endpoints.goals.addCollaborator(goalId), { userId, role })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useLinkSessionToGoal() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, sessionId }: { goalId: string; sessionId: string }) => {
+      const res = await apiClient.post(endpoints.goals.linkSession(goalId, sessionId))
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useUpdateGoal() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, data }: { goalId: string; data: Partial<Goal> }) => {
+      const res = await apiClient.patch(endpoints.goals.partialUpdate(goalId), data)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useDeleteGoal() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (goalId: string) => {
+      const res = await apiClient.delete(endpoints.goals.delete(goalId))
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
   })
 }
 

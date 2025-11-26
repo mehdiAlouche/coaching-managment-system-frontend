@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Goal, UserRole } from '../../models'
+import { Goal } from '../../models'
 import {
     Dialog,
     DialogContent,
@@ -11,16 +11,25 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Progress } from '../ui/progress'
 import { Badge } from '../ui/badge'
-import { Calendar, User, Target, CheckCircle2, Circle } from 'lucide-react'
+import { Calendar, User, Target, CheckCircle2, Circle, MessageSquare } from 'lucide-react'
 import { formatFriendlyDate, formatRelativeTime } from '../../lib/date-utils'
 import { cn } from '../../lib/utils'
+import { useUpdateMilestoneStatus, useAddGoalComment } from '../../hooks/useGoals'
+import { useToast } from '../../hooks/use-toast'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../ui/select'
 
 interface GoalDetailsModalProps {
     goal: Goal | null
     isOpen: boolean
     onClose: () => void
-    onUpdateProgress?: (goalId: string, progress: number, notes: string) => void
-    userRole?: UserRole
+    onUpdateProgress?: (goalId: string, progress: number) => void
+    userRole?: string
 }
 
 export default function GoalDetailsModal({
@@ -28,22 +37,84 @@ export default function GoalDetailsModal({
     isOpen,
     onClose,
     onUpdateProgress,
-    userRole = UserRole.ENTREPRENEUR
+    userRole
 }: GoalDetailsModalProps) {
+    const { toast } = useToast()
     const [showUpdateProgress, setShowUpdateProgress] = useState(false)
     const [newProgress, setNewProgress] = useState(goal?.progress ?? 0)
-    const [updateNotes, setUpdateNotes] = useState('')
+    const [showAddComment, setShowAddComment] = useState(false)
+    const [commentText, setCommentText] = useState('')
+    const [editingMilestone, setEditingMilestone] = useState<string | null>(null)
+    const [milestoneStatus, setMilestoneStatus] = useState('')
+    const [milestoneNotes, setMilestoneNotes] = useState('')
+
+    const updateMilestoneStatusMutation = useUpdateMilestoneStatus()
+    const addCommentMutation = useAddGoalComment()
 
     if (!goal) return null
 
     const progress = goal.progress ?? 0
-    const canEdit = userRole === 'manager' || userRole === 'coach'
+    const canEdit = userRole === 'manager' || userRole === 'coach' || userRole === 'admin'
+
+    // Handle populated fields (could be string ID or object)
+    const entrepreneurDisplay = typeof goal.entrepreneurId === 'string' 
+        ? goal.entrepreneurId 
+        : `${(goal.entrepreneurId as any)?.firstName || ''} ${(goal.entrepreneurId as any)?.lastName || ''}`.trim() || (goal.entrepreneurId as any)?._id || 'Not assigned'
+    
+    const coachDisplay = typeof goal.coachId === 'string' 
+        ? goal.coachId 
+        : `${(goal.coachId as any)?.firstName || ''} ${(goal.coachId as any)?.lastName || ''}`.trim() || (goal.coachId as any)?._id || 'Not assigned'
 
     const handleUpdateProgress = () => {
         if (onUpdateProgress) {
-            onUpdateProgress(goal._id, newProgress, updateNotes)
+            onUpdateProgress(goal._id, newProgress)
             setShowUpdateProgress(false)
-            setUpdateNotes('')
+        }
+    }
+
+    const handleUpdateMilestoneStatus = async (milestoneId: string) => {
+        try {
+            await updateMilestoneStatusMutation.mutateAsync({
+                goalId: goal._id,
+                milestoneId,
+                status: milestoneStatus,
+                notes: milestoneNotes
+            })
+            toast({
+                title: 'Success',
+                description: 'Milestone status updated successfully',
+            })
+            setEditingMilestone(null)
+            setMilestoneNotes('')
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to update milestone',
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const handleAddComment = async () => {
+        if (!commentText.trim()) return
+
+        try {
+            await addCommentMutation.mutateAsync({
+                goalId: goal._id,
+                text: commentText
+            })
+            toast({
+                title: 'Success',
+                description: 'Comment added successfully',
+            })
+            setShowAddComment(false)
+            setCommentText('')
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to add comment',
+                variant: 'destructive',
+            })
         }
     }
 
@@ -84,13 +155,6 @@ export default function GoalDetailsModal({
                                     onChange={(e) => setNewProgress(parseInt(e.target.value))}
                                     className="w-full mt-2 mb-4"
                                 />
-                                <Label>Update Notes</Label>
-                                <Textarea
-                                    value={updateNotes}
-                                    onChange={(e) => setUpdateNotes(e.target.value)}
-                                    placeholder="What progress have you made?"
-                                    className="mt-2 mb-3"
-                                />
                                 <div className="flex gap-2">
                                     <Button onClick={handleUpdateProgress}>Save Update</Button>
                                     <Button
@@ -98,7 +162,6 @@ export default function GoalDetailsModal({
                                         onClick={() => {
                                             setShowUpdateProgress(false)
                                             setNewProgress(progress)
-                                            setUpdateNotes('')
                                         }}
                                     >
                                         Cancel
@@ -119,16 +182,16 @@ export default function GoalDetailsModal({
                         <div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                 <User className="h-4 w-4" />
-                                <span className="font-medium">Entrepreneur ID</span>
+                                <span className="font-medium">Entrepreneur</span>
                             </div>
-                            <p className="text-sm font-mono text-xs">{goal.entrepreneurId || 'Not assigned'}</p>
+                            <p className="text-sm">{entrepreneurDisplay}</p>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                 <User className="h-4 w-4" />
-                                <span className="font-medium">Coach ID</span>
+                                <span className="font-medium">Coach</span>
                             </div>
-                            <p className="text-sm font-mono text-xs">{goal.coachId || 'Not assigned'}</p>
+                            <p className="text-sm">{coachDisplay}</p>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
@@ -171,50 +234,165 @@ export default function GoalDetailsModal({
                         <div>
                             <h3 className="font-semibold mb-3">Milestones</h3>
                             <div className="space-y-2">
-                                {goal.milestones.map((milestone, index) => (
-                                    <div
-                                        key={index}
-                                        className={cn(
-                                            'flex items-start gap-3 p-3 rounded-lg border',
-                                            milestone.completedAt ? 'bg-green-50 border-green-200' : 'bg-background'
-                                        )}
-                                    >
-                                        {milestone.completedAt ? (
-                                            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                        ) : (
-                                            <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                                        )}
-                                        <div className="flex-1">
-                                            <p className={cn(
-                                                'font-medium',
-                                                milestone.completedAt && 'line-through text-muted-foreground'
-                                            )}>
-                                                {milestone.title}
-                                            </p>
-                                            <div className="flex items-center gap-4 mt-1">
-                                                {milestone.targetDate && (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Target: {formatFriendlyDate(milestone.targetDate)}
+                                {goal.milestones.map((milestone, index) => {
+                                    const milestoneId = (milestone as any)._id || `milestone-${index}`
+                                    const isEditing = editingMilestone === milestoneId
+                                    
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={cn(
+                                                'flex items-start gap-3 p-3 rounded-lg border',
+                                                milestone.completedAt ? 'bg-green-50 border-green-200' : 'bg-background'
+                                            )}
+                                        >
+                                            {milestone.completedAt ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                            ) : (
+                                                <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                            )}
+                                            <div className="flex-1">
+                                                <p className={cn(
+                                                    'font-medium',
+                                                    milestone.completedAt && 'line-through text-muted-foreground'
+                                                )}>
+                                                    {milestone.title}
+                                                </p>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    {milestone.targetDate && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Target: {formatFriendlyDate(milestone.targetDate)}
+                                                        </p>
+                                                    )}
+                                                    {milestone.completedAt && (
+                                                        <p className="text-xs text-green-600">
+                                                            Completed: {formatFriendlyDate(milestone.completedAt)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {milestone.notes && (
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        {milestone.notes}
                                                     </p>
                                                 )}
-                                                {milestone.completedAt && (
-                                                    <p className="text-xs text-green-600">
-                                                        Completed: {formatFriendlyDate(milestone.completedAt)}
-                                                    </p>
+                                                <p className="text-xs text-muted-foreground mt-1">Status: {milestone.status}</p>
+                                                
+                                                {canEdit && !isEditing && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="mt-2"
+                                                        onClick={() => {
+                                                            setEditingMilestone(milestoneId)
+                                                            setMilestoneStatus(milestone.status)
+                                                        }}
+                                                    >
+                                                        Update Status
+                                                    </Button>
+                                                )}
+
+                                                {isEditing && (
+                                                    <div className="mt-3 p-3 border rounded bg-muted/50 space-y-3">
+                                                        <div>
+                                                            <Label className="text-xs">New Status</Label>
+                                                            <Select
+                                                                value={milestoneStatus}
+                                                                onValueChange={setMilestoneStatus}
+                                                            >
+                                                                <SelectTrigger className="mt-1">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="not_started">Not Started</SelectItem>
+                                                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                                                    <SelectItem value="completed">Completed</SelectItem>
+                                                                    <SelectItem value="blocked">Blocked</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs">Notes (optional)</Label>
+                                                            <Textarea
+                                                                value={milestoneNotes}
+                                                                onChange={(e) => setMilestoneNotes(e.target.value)}
+                                                                placeholder="Add notes about this update..."
+                                                                rows={2}
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => handleUpdateMilestoneStatus(milestoneId)}
+                                                            >
+                                                                Save
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    setEditingMilestone(null)
+                                                                    setMilestoneNotes('')
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-                                            {milestone.notes && (
-                                                <p className="text-sm text-muted-foreground mt-1">
-                                                    {milestone.notes}
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground mt-1">Status: {milestone.status}</p>
                                         </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
+
+                    {/* Add Comment Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <MessageSquare className="h-5 w-5" />
+                                Comments
+                            </h3>
+                            {!showAddComment && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddComment(true)}
+                                >
+                                    Add Comment
+                                </Button>
+                            )}
+                        </div>
+
+                        {showAddComment && (
+                            <div className="p-4 border rounded-lg bg-muted/50 mb-4">
+                                <Label>Comment</Label>
+                                <Textarea
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Write your comment here..."
+                                    rows={3}
+                                    className="mt-2 mb-3"
+                                />
+                                <div className="flex gap-2">
+                                    <Button onClick={handleAddComment} disabled={!commentText.trim()}>
+                                        Add Comment
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setShowAddComment(false)
+                                            setCommentText('')
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Linked Sessions */}
                     {goal.linkedSessions && goal.linkedSessions.length > 0 && (

@@ -31,10 +31,10 @@ export default function CreateSessionPage() {
   const orgId = user?.organizationId || ""
   
     const { data: coaches = [], isLoading: loadingCoaches } = useQuery<User[]>({
-      queryKey: ["coaches", orgId],
+      queryKey: ["users", "coaches", orgId],
       queryFn: async () => {
-        const res = await apiClient.get(endpoints.coaches.list, {
-          params: { organizationId: orgId }
+        const res = await apiClient.get(endpoints.users.list, {
+          params: { role: "coach", organizationId: orgId }
         })
         return Array.isArray(res.data.data) ? (res.data.data as User[]) : []
       },
@@ -42,10 +42,10 @@ export default function CreateSessionPage() {
     })
 
     const { data: entrepreneurs = [], isLoading: loadingEntrepreneurs } = useQuery<User[]>({
-      queryKey: ["entrepreneurs", orgId],
+      queryKey: ["users", "entrepreneurs", orgId],
       queryFn: async () => {
-        const res = await apiClient.get(endpoints.entrepreneurs.list, {
-          params: { organizationId: orgId }
+        const res = await apiClient.get(endpoints.users.list, {
+          params: { role: "entrepreneur", organizationId: orgId }
         })
         return Array.isArray(res.data.data) ? (res.data.data as User[]) : []
       },
