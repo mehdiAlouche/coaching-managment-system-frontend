@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Goal } from '../models'
+import { Goal, UserRole } from '../models'
 import { useAuth } from '../context/AuthContext'
 import { useGoals, useUpdateGoalProgress } from '../hooks/useGoals'
 import GoalKanbanBoard from '../components/goals/GoalKanbanBoard'
@@ -38,14 +38,20 @@ export default function GoalsPage() {
     const queryParams: Record<string, string> = {}
     if (filterStatus !== 'all') queryParams.status = filterStatus
     if (filterPriority !== 'all') queryParams.priority = filterPriority
+    if (user?.organizationId) queryParams.organizationId = user.organizationId
+    if (user?.role === UserRole.COACH) queryParams.coachId = user._id
+    if (user?.role === UserRole.ENTREPRENEUR) queryParams.entrepreneurId = user._id
 
     const { data: goals = [], isLoading, refetch } = useGoals(queryParams)
     const updateProgressMutation = useUpdateGoalProgress()
 
     // Filter goals
+    const getEntityId = (entity: any) => typeof entity === 'string' ? entity : entity?._id ?? ''
+
     const filteredGoals = goals.filter(goal => {
+        const description = typeof goal.description === 'string' ? goal.description : ''
         const matchesSearch = (goal.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            goal.description.toLowerCase().includes(searchTerm.toLowerCase())
+            description.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesStatus = filterStatus === 'all' || goal.status === filterStatus
         const matchesPriority = filterPriority === 'all' || goal.priority === filterPriority
         return matchesSearch && matchesStatus && matchesPriority
@@ -53,11 +59,11 @@ export default function GoalsPage() {
 
     // Role-specific filtering
     const roleFilteredGoals = filteredGoals.filter(goal => {
-        if (user?.role === 'entrepreneur') {
-            return goal.entrepreneurId === user._id
+        if (user?.role === UserRole.ENTREPRENEUR) {
+            return getEntityId(goal.entrepreneurId) === user._id
         }
-        if (user?.role === 'coach') {
-            return goal.coachId === user._id
+        if (user?.role === UserRole.COACH) {
+            return getEntityId(goal.coachId) === user._id
         }
         return true // Manager sees all
     })
@@ -68,6 +74,27 @@ export default function GoalsPage() {
     }
 
     const handleUpdateProgress = async (goalId: string, progress: number) => {
+        const targetGoal = goals.find(g => g._id === goalId)
+        if (!targetGoal) return
+
+        if (user?.role === UserRole.ENTREPRENEUR && getEntityId(targetGoal.entrepreneurId) !== user._id) {
+            toast({
+                title: 'Action not permitted',
+                description: 'You can only update progress on your own goals.',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        if (user?.role === UserRole.COACH && getEntityId(targetGoal.coachId) !== user._id) {
+            toast({
+                title: 'Action not permitted',
+                description: 'You can only update progress for goals assigned to you.',
+                variant: 'destructive',
+            })
+            return
+        }
+
         try {
             await updateProgressMutation.mutateAsync({ goalId, progress })
             toast({
@@ -121,7 +148,7 @@ export default function GoalsPage() {
                                         : 'Manage and track all organizational goals'}
                             </p>
                         </div>
-                        {(user?.role === 'manager' || user?.role === 'coach' || user?.role === 'admin') && (
+                        {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
                             <Button onClick={() => setIsCreateModalOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create Goal
@@ -244,7 +271,7 @@ export default function GoalsPage() {
                                     ? 'Try adjusting your filters'
                                     : 'Get started by creating your first goal'}
                             </p>
-                            {(user?.role === 'manager' || user?.role === 'coach' || user?.role === 'admin') && (
+                            {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
                                 <Button onClick={() => setIsCreateModalOpen(true)}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Create Goal
@@ -276,6 +303,7 @@ export default function GoalsPage() {
                     onClose={() => setIsDetailsOpen(false)}
                     onUpdateProgress={handleUpdateProgress}
                     userRole={user?.role}
+                    currentUserId={user?._id}
                 />
             </div>
         </div>

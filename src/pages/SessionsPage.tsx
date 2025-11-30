@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { apiClient, endpoints } from "../services"
 import type { Session, PaginatedResponse, User } from "../models"
+import { UserRole } from "../models"
+import { useAuth } from "../context/AuthContext"
 
 type FilterStatus = "all" | "scheduled" | "completed" | "cancelled" | "no_show" | "rescheduled"
 type ViewMode = "grid" | "list"
@@ -19,43 +21,90 @@ export default function SessionsPage() {
   const [filter, setFilter] = useState<FilterStatus>("all")
   const [upcomingOnly, setUpcomingOnly] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const { user, isLoading: authLoading } = useAuth()
 
   const {
     data,
     isLoading,
     error,
   } = useQuery<PaginatedResponse<Session>>({
-    queryKey: ["sessions", { page, limit, sort, filter, upcomingOnly }],
+    queryKey: ["sessions", { page, limit, sort, filter, upcomingOnly, org: user?.organizationId ?? "", role: user?.role ?? "", userId: user?._id ?? "" }],
     queryFn: async () => {
+      const params: Record<string, string | number | boolean> = {
+        page,
+        limit,
+        sort,
+      }
+
+      if (filter !== "all") {
+        params.status = filter
+      }
+
+      if (upcomingOnly) {
+        params.upcoming = true
+      }
+
+      if (user?.organizationId) {
+        params.organizationId = user.organizationId
+      }
+
+      if (user?.role === UserRole.COACH) {
+        params.coachId = user._id
+      }
+
+      if (user?.role === UserRole.ENTREPRENEUR) {
+        params.entrepreneurId = user._id
+      }
+
       const response = await apiClient.get(endpoints.sessions.list, {
-        params: {
-          page,
-          limit,
-          sort,
-          status: filter !== "all" ? filter : undefined,
-          upcoming: upcomingOnly || undefined,
-        },
+        params,
       })
       return response.data
     },
+    enabled: !!user,
   })
 
-  const sessions = data?.data || []
+  const rawSessions = data?.data || []
   const meta = data?.meta
 
   const totalPages = meta ? Math.ceil(meta.total / meta.limit) : 1
+  const canManageSessions = user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN
+
+  const sessions = rawSessions.filter((session) => {
+    if (!user) return false
+    if (canManageSessions) {
+      if (!user.organizationId) return true
+      return session.organizationId === user.organizationId
+    }
+
+    if (user.role === UserRole.COACH) {
+      const coachIdentifier = isUser(session.coachId) ? session.coachId._id : session.coachId
+      return coachIdentifier === user._id
+    }
+
+    if (user.role === UserRole.ENTREPRENEUR) {
+      const entrepreneurId = typeof session.entrepreneur === 'string'
+        ? session.entrepreneur
+        : session.entrepreneur?._id
+      return entrepreneurId === user._id
+    }
+
+    return false
+  })
 
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-foreground">Sessions</h1>
-          <Link
-            to="/sessions/create"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg transition"
-          >
-            + Create Session
-          </Link>
+          {canManageSessions && (
+            <Link
+              to="/sessions/create"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg transition"
+            >
+              + Create Session
+            </Link>
+          )}
         </div>
 
         {/* Filters and View Toggle */}
@@ -169,7 +218,7 @@ export default function SessionsPage() {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
+        {(isLoading || authLoading) && (
           <div className="bg-card p-12 rounded-lg shadow-md text-center border border-border">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
             <p className="text-muted-foreground">Loading sessions...</p>
@@ -185,7 +234,7 @@ export default function SessionsPage() {
         )}
 
         {/* Empty State */}
-        {!isLoading && !error && sessions.length === 0 && (
+        {!isLoading && !authLoading && !error && sessions.length === 0 && (
           <div className="bg-card p-12 rounded-lg shadow-md text-center border border-border">
             <p className="text-muted-foreground mb-6">No sessions found</p>
             <Link
@@ -198,7 +247,7 @@ export default function SessionsPage() {
         )}
 
         {/* Sessions Grid or List */}
-        {!isLoading && !error && sessions.length > 0 && (
+        {!isLoading && !authLoading && !error && sessions.length > 0 && (
           <>
             {viewMode === "grid" ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -2,8 +2,10 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient, endpoints } from "../services"
 import type { Session } from "../models"
+import { UserRole } from "../models"
 import { useState } from "react"
 import { useErrorHandler } from "../hooks/useErrorHandler"
+import { useAuth } from "../context/AuthContext"
 
 interface SessionDetailsPageProps {
   id: string
@@ -14,6 +16,7 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
   const queryClient = useQueryClient()
   const { handleError, showSuccess } = useErrorHandler()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { user } = useAuth()
 
   const {
     data: session,
@@ -73,6 +76,7 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
   const scheduledDate = new Date(session.scheduledAt)
   const endDate = new Date(session.endTime)
   const isPast = endDate.getTime() < Date.now()
+  const canManageSession = user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,29 +85,31 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
           <Link to="/sessions" className="text-primary hover:text-primary/80 font-medium">
             ← Back to Sessions
           </Link>
-          <div className="flex gap-2">
-            {!isPast && session.status === "scheduled" && (
-              <>
-                <button
-                  onClick={() => updateStatusMutation.mutate("completed")}
-                  disabled={updateStatusMutation.isPending}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
-                >
-                  Mark Complete
-                </button>
-                <button
-                  onClick={() => updateStatusMutation.mutate("cancelled")}
-                  disabled={updateStatusMutation.isPending}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </>
-            )}
-            <Link to="/sessions/$id/edit" params={{ id }} className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
-              Edit
-            </Link>
-          </div>
+          {canManageSession && (
+            <div className="flex gap-2">
+              {!isPast && session.status === "scheduled" && (
+                <>
+                  <button
+                    onClick={() => updateStatusMutation.mutate("completed")}
+                    disabled={updateStatusMutation.isPending}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                  >
+                    Mark Complete
+                  </button>
+                  <button
+                    onClick={() => updateStatusMutation.mutate("cancelled")}
+                    disabled={updateStatusMutation.isPending}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              <Link to="/sessions/$id/edit" params={{ id }} className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
+                Edit
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="bg-card rounded-lg shadow-lg overflow-hidden border border-border">
@@ -252,35 +258,37 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
             )}
 
             {/* Delete Section */}
-            <div className="border-t border-border pt-6 mt-8">
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg font-medium"
-                >
-                  Delete Session
-                </button>
-              ) : (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
-                  <p className="font-semibold text-destructive mb-3">Are you sure? This cannot be undone.</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => deleteSessionMutation.mutate()}
-                      disabled={deleteSessionMutation.isPending}
-                      className="px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg disabled:opacity-50"
-                    >
-                      {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg"
-                    >
-                      Cancel
-                    </button>
+            {canManageSession && (
+              <div className="border-t border-border pt-6 mt-8">
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg font-medium"
+                  >
+                    Delete Session
+                  </button>
+                ) : (
+                  <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
+                    <p className="font-semibold text-destructive mb-3">Are you sure? This cannot be undone.</p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => deleteSessionMutation.mutate()}
+                        disabled={deleteSessionMutation.isPending}
+                        className="px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg disabled:opacity-50"
+                      >
+                        {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </main>

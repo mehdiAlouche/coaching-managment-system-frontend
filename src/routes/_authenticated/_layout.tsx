@@ -21,8 +21,8 @@ function AuthenticatedLayout() {
   const { logout } = useAuth()
   const navigate = Route.useNavigate()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate({ to: '/auth/login' })
   }
 

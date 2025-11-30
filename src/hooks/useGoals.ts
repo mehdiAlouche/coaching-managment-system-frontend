@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query'
 import { apiClient, endpoints } from '../services'
+import { useAuth } from '../context/AuthContext'
 import type { Goal } from '../models'
+import { UserRole } from '../models'
 
 type QueryOpts<T> = Omit<UseQueryOptions<T, unknown, T, readonly unknown[]>, 'queryKey' | 'queryFn'>
 
@@ -8,14 +10,36 @@ export function useGoals(
   params?: Record<string, string | number>,
   options?: QueryOpts<Goal[]>
 ) {
+  const { user } = useAuth()
+
   return useQuery({
-    queryKey: ['goals', 'list', params],
+    queryKey: ['goals', 'list', user?._id ?? 'anonymous', params],
     queryFn: async () => {
-      const res = await apiClient.get(endpoints.goals.list, { params })
+      const scopedParams: Record<string, string | number> = {
+        ...(params ?? {}),
+      }
+
+      if (user?.organizationId) {
+        scopedParams.organizationId = user.organizationId
+      }
+
+      switch (user?.role) {
+        case UserRole.COACH:
+          scopedParams.coachId = user._id
+          break
+        case UserRole.ENTREPRENEUR:
+          scopedParams.entrepreneurId = user._id
+          break
+        default:
+          break
+      }
+
+      const res = await apiClient.get(endpoints.goals.list, { params: scopedParams })
       // Handle both wrapped { data: [...] } and direct array responses
       return (Array.isArray(res.data) ? res.data : res.data?.data || []) as Goal[]
     },
     ...(options as object),
+    enabled: (options?.enabled ?? true) && !!user,
   })
 }
 

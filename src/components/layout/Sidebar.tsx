@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 interface SidebarProps {
-  onLogout: () => void
+  onLogout: () => Promise<void> | void
 }
 
 export function Sidebar({ onLogout }: SidebarProps) {
@@ -162,7 +162,10 @@ export function Sidebar({ onLogout }: SidebarProps) {
             <Button
               variant="outline"
               className="w-full justify-start gap-3"
-              onClick={onLogout}
+              onClick={async () => {
+                setIsMobileOpen(false)
+                await onLogout()
+              }}
             >
               <LogOut className="h-4 w-4" />
               Logout

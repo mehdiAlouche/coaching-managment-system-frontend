@@ -19,6 +19,8 @@ const endpoints = {
   auth: {
     login: import.meta.env.VITE_API_ENDPOINT_AUTH_LOGIN || '/auth/login',
     me: import.meta.env.VITE_API_ENDPOINT_AUTH_ME || '/auth/me',
+    refresh: import.meta.env.VITE_API_ENDPOINT_AUTH_REFRESH || '/auth/refresh',
+    logout: import.meta.env.VITE_API_ENDPOINT_AUTH_LOGOUT || '/auth/logout',
   },
 
   // ─────────────────────────────────────────

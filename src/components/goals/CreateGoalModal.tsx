@@ -104,6 +104,12 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
         }))
     }
 
+    const toIsoDate = (value: string) => {
+        if (!value) return undefined
+        const iso = new Date(`${value}T00:00:00Z`)
+        return Number.isNaN(iso.getTime()) ? undefined : iso.toISOString()
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         
@@ -118,10 +124,39 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
 
         setIsSubmitting(true)
         try {
-            await apiClient.post(endpoints.goals.create, {
-                ...formData,
-                milestones: formData.milestones.filter(m => m.title.trim() !== '')
-            })
+            const payload = {
+                entrepreneurId: formData.entrepreneurId,
+                coachId: formData.coachId,
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                status: formData.status,
+                priority: formData.priority,
+            } as Record<string, any>
+
+            const targetDateIso = toIsoDate(formData.targetDate)
+            if (targetDateIso) {
+                payload.targetDate = targetDateIso
+            }
+
+            payload.milestones = formData.milestones
+                .filter(m => m.title.trim() !== '')
+                .map(milestone => {
+                    const milestoneData: Record<string, any> = {
+                        title: milestone.title.trim(),
+                        status: milestone.status,
+                    }
+
+                    const milestoneIso = toIsoDate(milestone.targetDate)
+                    if (milestoneIso) {
+                        milestoneData.targetDate = milestoneIso
+                    }
+                    if (milestone.notes.trim()) {
+                        milestoneData.notes = milestone.notes.trim()
+                    }
+                    return milestoneData
+                })
+
+            await apiClient.post(endpoints.goals.create, payload)
             
             toast({
                 title: 'Success',

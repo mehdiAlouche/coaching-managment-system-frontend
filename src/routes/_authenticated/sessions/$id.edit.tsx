@@ -5,7 +5,7 @@ export const Route = createFileRoute('/_authenticated/sessions/$id/edit')({
   beforeLoad: async () => {
     const role = localStorage.getItem('auth_role')
     // Only managers can edit sessions (frontend restriction)
-    const allowedRoles = ['manager']
+    const allowedRoles = ['manager', 'admin']
     if (!role || !allowedRoles.includes(role.toLowerCase())) {
       throw redirect({ to: '/sessions' })
     }

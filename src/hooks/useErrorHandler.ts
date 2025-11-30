@@ -14,6 +14,7 @@ import {
   isValidationError,
   type ParsedError,
 } from '../lib/error-handler';
+import { clearAuthSession } from '../services';
 
 interface UseErrorHandlerOptions {
   /** Custom error message to override the default */
@@ -52,8 +53,7 @@ export const useErrorHandler = () => {
 
       // Handle logout if needed
       if (autoLogout && shouldLogout(parsedError)) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
+        clearAuthSession();
         navigate({ to: '/auth/login', replace: true });
       }
 

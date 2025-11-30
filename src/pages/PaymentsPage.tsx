@@ -21,18 +21,29 @@ import { useToast } from '../hooks/use-toast'
 type FilterStatus = 'all' | 'pending' | 'paid' | 'overdue'
 
 export default function PaymentsPage() {
-    const { user } = useAuth()
+    const { user, isLoading: authLoading } = useAuth()
     const queryClient = useQueryClient()
     const { toast } = useToast()
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     const { data: payments = [], isLoading } = useQuery<Payment[]>({
-        queryKey: ['payments'],
+        queryKey: ['payments', user?._id ?? 'anonymous', user?.role ?? ''],
         queryFn: async () => {
-            const response = await apiClient.get(endpoints.payments.list)
+            const params: Record<string, string> = {}
+
+            if (user?.organizationId) {
+                params.organizationId = user.organizationId
+            }
+
+            if (user?.role === UserRole.COACH) {
+                params.coachId = user._id
+            }
+
+            const response = await apiClient.get(endpoints.payments.list, { params })
             return response.data.data || response.data || []
         },
+        enabled: !!user,
     })
 
     const markPaidMutation = useMutation({
@@ -48,7 +59,14 @@ export default function PaymentsPage() {
     })
 
     // Filter payments
-    const filteredPayments = payments.filter(payment => {
+    const scopedPayments = payments.filter(payment => {
+        if (user?.organizationId) {
+            return payment.organizationId === user.organizationId
+        }
+        return true
+    })
+
+    const filteredPayments = scopedPayments.filter(payment => {
         if (filterStatus === 'all') return true
         return payment.status === filterStatus
     })
@@ -71,6 +89,7 @@ export default function PaymentsPage() {
         .reduce((sum, p) => sum + p.amount, 0)
 
     const handleMarkPaid = async (paymentId: string) => {
+        if (user?.role !== UserRole.MANAGER) return
         markPaidMutation.mutate(paymentId)
     }
 
@@ -122,7 +141,7 @@ export default function PaymentsPage() {
         }
     }
 
-    if (isLoading) {
+    if (isLoading || authLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">

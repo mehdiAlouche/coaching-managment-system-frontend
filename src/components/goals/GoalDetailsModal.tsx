@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Goal } from '../../models'
+import { Goal, UserRole } from '../../models'
 import {
     Dialog,
     DialogContent,
@@ -30,6 +30,7 @@ interface GoalDetailsModalProps {
     onClose: () => void
     onUpdateProgress?: (goalId: string, progress: number) => void
     userRole?: string
+    currentUserId?: string
 }
 
 export default function GoalDetailsModal({
@@ -37,7 +38,8 @@ export default function GoalDetailsModal({
     isOpen,
     onClose,
     onUpdateProgress,
-    userRole
+    userRole,
+    currentUserId,
 }: GoalDetailsModalProps) {
     const { toast } = useToast()
     const [showUpdateProgress, setShowUpdateProgress] = useState(false)
@@ -54,7 +56,20 @@ export default function GoalDetailsModal({
     if (!goal) return null
 
     const progress = goal.progress ?? 0
-    const canEdit = userRole === 'manager' || userRole === 'coach' || userRole === 'admin'
+    const entrepreneurId = typeof goal.entrepreneurId === 'string'
+        ? goal.entrepreneurId
+        : (goal.entrepreneurId as any)?._id ?? ''
+    const coachId = typeof goal.coachId === 'string'
+        ? goal.coachId
+        : (goal.coachId as any)?._id ?? ''
+
+    const normalizedRole = typeof userRole === 'string' ? (userRole.toLowerCase() as UserRole) : ''
+    const isManager = normalizedRole === UserRole.MANAGER || normalizedRole === UserRole.ADMIN
+    const isCoach = normalizedRole === UserRole.COACH && coachId === currentUserId
+    const isEntrepreneurOwner = normalizedRole === UserRole.ENTREPRENEUR && entrepreneurId === currentUserId
+
+    const canUpdateProgress = isManager || isCoach || isEntrepreneurOwner
+    const canManageMilestones = isManager || isCoach
 
     // Handle populated fields (could be string ID or object)
     const entrepreneurDisplay = typeof goal.entrepreneurId === 'string' 
@@ -66,13 +81,14 @@ export default function GoalDetailsModal({
         : `${(goal.coachId as any)?.firstName || ''} ${(goal.coachId as any)?.lastName || ''}`.trim() || (goal.coachId as any)?._id || 'Not assigned'
 
     const handleUpdateProgress = () => {
-        if (onUpdateProgress) {
+        if (onUpdateProgress && canUpdateProgress) {
             onUpdateProgress(goal._id, newProgress)
             setShowUpdateProgress(false)
         }
     }
 
     const handleUpdateMilestoneStatus = async (milestoneId: string) => {
+        if (!canManageMilestones) return
         try {
             await updateMilestoneStatusMutation.mutateAsync({
                 goalId: goal._id,
@@ -133,7 +149,7 @@ export default function GoalDetailsModal({
                             <span className="text-2xl font-bold text-primary">{progress}%</span>
                         </div>
                         <Progress value={progress} className="h-3 mb-2" />
-                        {canEdit && !showUpdateProgress && (
+                        {canUpdateProgress && !showUpdateProgress && (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -144,7 +160,7 @@ export default function GoalDetailsModal({
                             </Button>
                         )}
 
-                        {showUpdateProgress && (
+                        {showUpdateProgress && canUpdateProgress && (
                             <div className="mt-4 p-4 border rounded-lg bg-muted/50">
                                 <Label>New Progress: {newProgress}%</Label>
                                 <input
@@ -277,7 +293,7 @@ export default function GoalDetailsModal({
                                                 )}
                                                 <p className="text-xs text-muted-foreground mt-1">Status: {milestone.status}</p>
                                                 
-                                                {canEdit && !isEditing && (
+                                                {canManageMilestones && !isEditing && (
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
