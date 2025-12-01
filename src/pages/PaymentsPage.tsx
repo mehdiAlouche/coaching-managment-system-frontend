@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Payment, UserRole } from '../models'
+import { UserRole } from '../models'
 import { useAuth } from '../context/AuthContext'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, endpoints } from '../services'
 import PaymentCard from '../components/payments/PaymentCard'
 import CreatePaymentModal from '../components/payments/CreatePaymentModal'
@@ -17,6 +17,7 @@ import {
 import { DollarSign, Plus, TrendingUp } from 'lucide-react'
 import { formatCompactCurrency } from '../lib/currency'
 import { useToast } from '../hooks/use-toast'
+import { usePayments } from '../hooks/usePayments'
 
 type FilterStatus = 'all' | 'pending' | 'paid' | 'overdue'
 
@@ -27,24 +28,7 @@ export default function PaymentsPage() {
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-    const { data: payments = [], isLoading } = useQuery<Payment[]>({
-        queryKey: ['payments', user?._id ?? 'anonymous', user?.role ?? ''],
-        queryFn: async () => {
-            const params: Record<string, string> = {}
-
-            if (user?.organizationId) {
-                params.organizationId = user.organizationId
-            }
-
-            if (user?.role === UserRole.COACH) {
-                params.coachId = user._id
-            }
-
-            const response = await apiClient.get(endpoints.payments.list, { params })
-            return response.data.data || response.data || []
-        },
-        enabled: !!user,
-    })
+    const { data: payments = [], isLoading } = usePayments()
 
     const markPaidMutation = useMutation({
         mutationFn: async (paymentId: string) => {
@@ -60,6 +44,10 @@ export default function PaymentsPage() {
 
     // Filter payments
     const scopedPayments = payments.filter(payment => {
+        if (user?.role === UserRole.COACH) {
+            return true
+        }
+
         if (user?.organizationId) {
             return payment.organizationId === user.organizationId
         }
@@ -72,12 +60,7 @@ export default function PaymentsPage() {
     })
 
     // Role-specific filtering (Client-side fallback, though API should handle it)
-    const roleFilteredPayments = filteredPayments.filter(payment => {
-        if (user?.role === UserRole.COACH) {
-            return payment.coachId === user._id
-        }
-        return true // Manager sees all
-    })
+    const roleFilteredPayments = filteredPayments
 
     // Calculate stats
     const totalAmount = roleFilteredPayments.reduce((sum, p) => sum + p.amount, 0)

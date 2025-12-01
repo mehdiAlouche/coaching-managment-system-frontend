@@ -19,17 +19,25 @@ export function usePayments(
         ...(params ?? {}),
       }
 
-      if (user?.organizationId) {
+      if (!user?._id) {
+        return []
+      }
+
+      if (user.role === UserRole.COACH) {
+        const { scope, ...coachParams } = scopedParams
+        const res = await apiClient.get(endpoints.users.payments(user._id), { params: coachParams })
+        const payload = res.data
+        if (Array.isArray(payload)) return payload as Payment[]
+        return (payload?.data ?? []) as Payment[]
+      }
+
+      if (user.organizationId) {
         scopedParams.organizationId = user.organizationId
       }
 
-      if (user?.role === UserRole.COACH) {
-        scopedParams.coachId = user._id
-      }
-
       const res = await apiClient.get(endpoints.payments.list, { params: scopedParams })
-      // Handle both wrapped { data: [...] } and direct array responses
-      return (Array.isArray(res.data) ? res.data : res.data?.data || []) as Payment[]
+      const payload = res.data
+      return (Array.isArray(payload) ? payload : payload?.data ?? []) as Payment[]
     },
     ...(options as object),
     enabled: (options?.enabled ?? true) && !!user,

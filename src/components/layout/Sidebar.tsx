@@ -1,7 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import {
   LayoutDashboard,
-  Calendar,
   Users,
   LogOut,
   Menu,
@@ -37,11 +36,6 @@ export function Sidebar({ onLogout }: SidebarProps) {
         name: user?.role === 'entrepreneur' ? 'My Sessions' : 'Sessions',
         href: '/sessions',
         icon: Users,
-      },
-      {
-        name: 'Calendar',
-        href: '/calendar',
-        icon: Calendar,
       },
     ]
 
@@ -156,7 +150,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
           {/* User info and logout */}
           <div className="px-4 py-6 border-t border-border space-y-4">
             <div className="px-4 py-3 rounded-lg bg-muted/50">
-              <p className="text-sm font-medium text-foreground">{user?.name}</p>
+              <p className="text-sm font-medium text-foreground">{user?.firstName} {user?.lastName}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
             <Button
