@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { apiClient, endpoints } from "../services"
-import type { Session } from "../models"
+import { UserRole, type Session } from "../models"
 import { useAuth } from "../context/AuthContext"
 import { useErrorHandler } from "../hooks/useErrorHandler"
 
@@ -33,21 +33,32 @@ export default function CalendarPage() {
   const { user } = useAuth()
   const orgId = user?.organizationId || ""
   const { handleError } = useErrorHandler()
+  const canFilterByRole = user?.role === UserRole.ADMIN || user?.role === UserRole.MANAGER
+  const coachFilter = canFilterByRole ? coachId : ""
+  const entrepreneurFilter = canFilterByRole ? entrepreneurId : ""
+
+  useEffect(() => {
+    if (!canFilterByRole) {
+      setCoachId("")
+      setEntrepreneurId("")
+    }
+  }, [canFilterByRole])
 
   // Fetch coaches
   const { data: coaches = [] } = useQuery({
     queryKey: ["users", "coaches", orgId],
-    enabled: !!orgId,
+    enabled: !!orgId && canFilterByRole,
     queryFn: async () => {
       const res = await apiClient.get(endpoints.users.list, { params: { role: "coach", organizationId: orgId } })
+      console.log("Coaches:", res);
       return Array.isArray(res.data.data) ? res.data.data : []
     }
   })
-
+   
   // Fetch entrepreneurs
   const { data: entrepreneurs = [] } = useQuery({
     queryKey: ["users", "entrepreneurs", orgId],
-    enabled: !!orgId,
+    enabled: !!orgId && canFilterByRole,
     queryFn: async () => {
       const res = await apiClient.get(endpoints.users.list, { params: { role: "entrepreneur", organizationId: orgId } })
       return Array.isArray(res.data.data) ? res.data.data : []
@@ -56,14 +67,14 @@ export default function CalendarPage() {
 
   // Calendar query
   const { data: calendarData, isLoading, error } = useQuery<CalendarData>({
-    queryKey: ["calendar", month, year, coachId, entrepreneurId, status],
+    queryKey: ["calendar", month, year, coachFilter, entrepreneurFilter, status],
     queryFn: async () => {
       const res = await apiClient.get(endpoints.sessions.calendar, {
         params: {
           month,
           year,
-          coachId: coachId || undefined,
-          entrepreneurId: entrepreneurId || undefined,
+          coachId: coachFilter || undefined,
+          entrepreneurId: entrepreneurFilter || undefined,
           status: status || undefined,
           view: "month",
         }
@@ -148,32 +159,36 @@ export default function CalendarPage() {
               {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
             </select>
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs font-medium text-muted-foreground mb-1">Coach</label>
-            <select
-              value={coachId}
-              onChange={e => setCoachId(e.target.value)}
-              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
-            >
-              <option value="">All</option>
-              {(coaches as any[]).map(c => (
-                <option key={c._id} value={c._id}>{c.firstName} {c.lastName}</option>
-              ))}
-            </select>
-          </div>
-            <div className="flex flex-col">
-            <label className="text-xs font-medium text-muted-foreground mb-1">Entrepreneur</label>
-            <select
-              value={entrepreneurId}
-              onChange={e => setEntrepreneurId(e.target.value)}
-              className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
-            >
-              <option value="">All</option>
-              {(entrepreneurs as any[]).map(e => (
-                <option key={e._id} value={e._id}>{e.firstName} {e.lastName}</option>
-              ))}
-            </select>
-          </div>
+          {canFilterByRole && (
+            <>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-muted-foreground mb-1">Coach</label>
+                <select
+                  value={coachId}
+                  onChange={e => setCoachId(e.target.value)}
+                  className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+                >
+                  <option value="">All</option>
+                  {(coaches as any[]).map(c => (
+                    <option key={c._id} value={c._id}>{c.firstName} {c.lastName}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-muted-foreground mb-1">Entrepreneur</label>
+                <select
+                  value={entrepreneurId}
+                  onChange={e => setEntrepreneurId(e.target.value)}
+                  className="px-2 py-2 rounded-md bg-background border border-input text-foreground text-sm"
+                >
+                  <option value="">All</option>
+                  {(entrepreneurs as any[]).map(e => (
+                    <option key={e._id} value={e._id}>{e.firstName} {e.lastName}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
           <div className="flex items-end gap-2">
             <button
               type="button"

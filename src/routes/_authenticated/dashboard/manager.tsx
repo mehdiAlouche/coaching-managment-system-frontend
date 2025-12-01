@@ -107,8 +107,17 @@ function ManagerDashboard() {
 
         {/* Trends */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <TrendList title="Sessions by Month" items={(data?.sessionsByMonth || []).map(i => ({ label: i.month, value: i.count }))} Icon={BarChart3} />
-          <TrendList title="Revenue by Week" items={(data?.revenueByWeek || []).map(i => ({ label: i.week, value: i.revenue }))} prefix="$" Icon={LineChart} />
+          <TrendList
+            title="Sessions by Month"
+            items={(data?.sessionsByMonth || []).map(i => ({ label: i.month, value: typeof i.count === 'number' ? i.count : 0 }))}
+            Icon={BarChart3}
+          />
+          <TrendList
+            title="Revenue by Week"
+            items={(data?.revenueByWeek || []).map(i => ({ label: i.week, value: typeof i.revenue === 'number' ? i.revenue : 0 }))}
+            prefix="$"
+            Icon={LineChart}
+          />
         </section>
 
         {/* Sessions */}
@@ -158,7 +167,11 @@ function DistributionCard({ title, data, color = 'bg-primary', Icon }: { title: 
 }
 
 function TrendList({ title, items, prefix = '', Icon }: { title: string; items: { label: string; value: number }[]; prefix?: string; Icon?: React.ComponentType<{ className?: string }> }) {
-  const max = Math.max(1, ...items.map(i => i.value))
+  const normalizedItems = items.map(it => ({
+    label: it.label,
+    value: Number.isFinite(it.value) ? it.value : 0,
+  }))
+  const max = Math.max(1, ...normalizedItems.map(i => i.value))
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center gap-2 mb-4">
@@ -166,16 +179,16 @@ function TrendList({ title, items, prefix = '', Icon }: { title: string; items: 
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
       <div className="space-y-2">
-        {items.map(it => (
+        {normalizedItems.map(it => (
           <div key={it.label} className="flex items-center gap-3">
             <div className="w-28 text-sm text-muted-foreground truncate">{it.label}</div>
             <div className="flex-1 h-2 bg-muted rounded">
-              <div className="h-2 bg-primary rounded" style={{ width: `${(it.value / max) * 100}%` }} />
+              <div className="h-2 bg-primary rounded" style={{ width: `${max ? (it.value / max) * 100 : 0}%` }} />
             </div>
             <div className="w-16 text-right text-sm text-foreground">{prefix}{it.value.toLocaleString()}</div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-muted-foreground">No data</p>}
+        {normalizedItems.length === 0 && <p className="text-sm text-muted-foreground">No data</p>}
       </div>
     </div>
   )
