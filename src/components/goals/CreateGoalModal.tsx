@@ -40,10 +40,13 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
     const { user } = useAuth()
     const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
+    
+    const userRole = user?.role?.toLowerCase() || ''
+    const isCoach = userRole === 'coach'
 
     const [formData, setFormData] = useState({
         entrepreneurId: '',
-        coachId: '',
+        coachId: isCoach ? (user?._id || '') : '',
         title: '',
         description: '',
         status: 'not_started',
@@ -54,7 +57,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
 
     const orgId = user?.organizationId || ''
 
-    // Fetch coaches
+    // Fetch coaches (only for managers/admins)
     const { data: coaches = [] } = useQuery<User[]>({
         queryKey: ['users', 'coaches', orgId],
         queryFn: async () => {
@@ -63,7 +66,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
             })
             return Array.isArray(res.data.data) ? res.data.data : []
         },
-        enabled: !!orgId && isOpen,
+        enabled: !!orgId && isOpen && !isCoach,
     })
 
     // Fetch entrepreneurs
@@ -113,7 +116,9 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         
-        if (!formData.entrepreneurId || !formData.coachId || !formData.title) {
+            const coachId = isCoach ? user?._id : formData.coachId
+        
+        if (!formData.entrepreneurId || !coachId || !formData.title) {
             toast({
                 title: 'Validation Error',
                 description: 'Please fill in all required fields',
@@ -126,7 +131,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
         try {
             const payload = {
                 entrepreneurId: formData.entrepreneurId,
-                coachId: formData.coachId,
+                coachId: coachId,
                 title: formData.title.trim(),
                 description: formData.description.trim(),
                 status: formData.status,
@@ -166,7 +171,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
             // Reset form
             setFormData({
                 entrepreneurId: '',
-                coachId: '',
+                coachId: isCoach ? (user?._id || '') : '',
                 title: '',
                 description: '',
                 status: 'not_started',
@@ -240,24 +245,26 @@ export default function CreateGoalModal({ isOpen, onClose, onSuccess }: CreateGo
                                 </Select>
                             </div>
 
-                            <div>
-                                <Label htmlFor="coachId">Coach *</Label>
-                                <Select
-                                    value={formData.coachId}
-                                    onValueChange={(value) => setFormData(prev => ({ ...prev, coachId: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select coach" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {coaches.map(coach => (
-                                            <SelectItem key={coach._id} value={coach._id}>
-                                                {coach.firstName} {coach.lastName}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            {!isCoach && (
+                                <div>
+                                    <Label htmlFor="coachId">Coach *</Label>
+                                    <Select
+                                        value={formData.coachId}
+                                        onValueChange={(value) => setFormData(prev => ({ ...prev, coachId: value }))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select coach" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {coaches.map(coach => (
+                                                <SelectItem key={coach._id} value={coach._id}>
+                                                    {coach.firstName} {coach.lastName}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">

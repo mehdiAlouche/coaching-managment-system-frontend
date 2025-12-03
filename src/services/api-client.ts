@@ -144,7 +144,7 @@ apiClient.interceptors.response.use(
       !isAuthRefreshAttempt &&
       !skipRefresh
     ) {
-      if (!originalRequest?._retry) {
+      if (originalRequest && !originalRequest._retry) {
         originalRequest._retry = true
         const newToken = await refreshAuthToken()
         if (newToken) {

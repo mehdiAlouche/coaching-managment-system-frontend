@@ -148,7 +148,7 @@ export default function GoalsPage() {
                                         : 'Manage and track all organizational goals'}
                             </p>
                         </div>
-                        {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
+                        {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN || user?.role === UserRole.COACH) && (
                             <Button onClick={() => setIsCreateModalOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create Goal
@@ -271,7 +271,7 @@ export default function GoalsPage() {
                                     ? 'Try adjusting your filters'
                                     : 'Get started by creating your first goal'}
                             </p>
-                            {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
+                            {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN || user?.role === UserRole.COACH) && (
                                 <Button onClick={() => setIsCreateModalOpen(true)}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Create Goal

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient, endpoints } from "../services"
 import type { Session } from "../models"
 import { useErrorHandler } from "../hooks/useErrorHandler"
+import { useToast } from "@/hooks/use-toast"
 
 interface EditSessionPageProps {
   id: string
@@ -15,6 +16,7 @@ export default function EditSessionPage({ id }: EditSessionPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { handleError, showSuccess } = useErrorHandler()
+  const { toast } = useToast()
 
   const { data: session, isLoading } = useQuery<Session>({
     queryKey: ["session", id],
@@ -85,6 +87,35 @@ export default function EditSessionPage({ id }: EditSessionPageProps) {
       // Include description if backend supports it (kept for compatibility)
       if (data.description !== undefined) {
         payload.description = data.description
+      }
+
+      // Conflict check before update (exclude current session id)
+      try {
+        const conflictRes = await apiClient.post(endpoints.sessions.conflictCheck, {
+          coachId,
+          scheduledAt: scheduledDate.toISOString(),
+          duration: data.duration,
+          excludeSessionId: id,
+        })
+        const api = conflictRes.data?.data
+        if (api?.hasConflict) {
+          const ent = api.conflictingSession?.entrepreneur
+          const who = ent ? `${ent.firstName} ${ent.lastName}` : 'another session'
+          const when = api.conflictingSession?.scheduledAt ? new Date(api.conflictingSession.scheduledAt) : null
+          const whenStr = when ? `${when.toLocaleDateString()} ${when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+          toast({
+            title: 'Scheduling conflict',
+            description: `Conflict with ${who} at ${whenStr}. Adjust the time or coach.`,
+            variant: 'destructive',
+          })
+          throw new Error(`Scheduling conflict with ${who} at ${whenStr}. Please adjust.`)
+        }
+      } catch (err: any) {
+        // If API returns validation error, surface it; if network error, proceed to generic handler
+        if (err?.response) {
+          throw err
+        }
+        throw err
       }
 
       const response = await apiClient.put(endpoints.sessions.update(id), payload)

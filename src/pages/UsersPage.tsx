@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { User, PaginatedResponse } from '../models'
 import { useAuth } from '../context/AuthContext'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, endpoints } from '../services'
+import { useErrorHandler } from '../hooks/useErrorHandler'
 import UsersTable from '../components/users/UsersTable'
+import UserModal from '../components/users/UserModal'
+import DeleteUserDialog from '../components/users/DeleteUserDialog'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent } from '../components/ui/card'
@@ -16,15 +19,23 @@ import {
 } from '../components/ui/select'
 import { Plus, Search, Users, UserCog, Briefcase, UserCheck } from 'lucide-react'
 
-type FilterRole = 'all' | 'coach' | 'entrepreneur' | 'manager' | 'admin'
+type FilterRole = 'all' | 'coach' | 'entrepreneur' | 'manager' 
 
 export default function UsersPage() {
-    const { user } = useAuth()
+    const { user: currentUser } = useAuth()
+    const queryClient = useQueryClient()
+    const { handleError, showSuccess } = useErrorHandler()
     const [page, setPage] = useState(1)
     const [limit] = useState(20)
     const [sort, setSort] = useState('-createdAt')
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRole, setFilterRole] = useState<FilterRole>('all')
+    
+    // Modal states
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
 
     const { data, isLoading, error } = useQuery<PaginatedResponse<User>>({
         queryKey: ['users', { page, limit, sort }],
@@ -43,8 +54,13 @@ export default function UsersPage() {
     const users = data?.data || []
     const meta = data?.meta
 
+    // Filter out current manager from the list if they are a manager
+    const visibleUsers = currentUser?.role === 'manager' 
+        ? users.filter(u => u._id !== currentUser._id)
+        : users
+
     // Client-side filtering for search and role
-    const filteredUsers = users.filter(u => {
+    const filteredUsers = visibleUsers.filter(u => {
         const matchesSearch =
             u.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,27 +69,81 @@ export default function UsersPage() {
         return matchesSearch && matchesRole
     })
 
-    // Calculate stats from all users (not just filtered)
+    // Calculate stats from visible users (not just filtered)
     const stats = {
-        total: users.length,
-        coaches: users.filter(u => u.role === 'coach').length,
-        entrepreneurs: users.filter(u => u.role === 'entrepreneur').length,
-        active: users.filter(u => u.isActive).length,
+        total: visibleUsers.length,
+        coaches: visibleUsers.filter(u => u.role === 'coach').length,
+        entrepreneurs: visibleUsers.filter(u => u.role === 'entrepreneur').length,
+        active: visibleUsers.filter(u => u.isActive).length,
+        managers: visibleUsers.filter(u => u.role === 'manager').length,
+        admins: visibleUsers.filter(u => u.role === 'admin').length,
+    }
+
+    // Toggle user status mutation
+    const toggleStatusMutation = useMutation({
+        mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
+            const res = await apiClient.patch(endpoints.users.partialUpdate(userId), { isActive })
+            return res.data
+        },
+        onMutate: async ({ userId, isActive }) => {
+            // Cancel any outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['users'] })
+
+            // Snapshot the previous value
+            const previousData = queryClient.getQueryData<PaginatedResponse<User>>(['users', { page, limit, sort }])
+
+            // Optimistically update to the new value
+            if (previousData) {
+                queryClient.setQueryData<PaginatedResponse<User>>(['users', { page, limit, sort }], {
+                    ...previousData,
+                    data: previousData.data.map(u =>
+                        u._id === userId ? { ...u, isActive } : u
+                    )
+                })
+            }
+
+            return { previousData }
+        },
+        onError: (error: any, variables, context) => {
+            // Rollback on error
+            if (context?.previousData) {
+                queryClient.setQueryData(['users', { page, limit, sort }], context.previousData)
+            }
+            handleError(error, { customMessage: 'Failed to update user status' })
+        },
+        onSuccess: () => {
+            showSuccess('User status updated successfully')
+        },
+        onSettled: () => {
+            // Refetch to ensure we're in sync with the server
+            queryClient.invalidateQueries({ queryKey: ['users'] })
+        },
+    })
+
+    const handleCreate = () => {
+        setSelectedUser(null)
+        setModalMode('create')
+        setIsUserModalOpen(true)
     }
 
     const handleEdit = (user: User) => {
-        // TODO: Open edit modal
-        console.log('Edit user:', user)
+        setSelectedUser(user)
+        setModalMode('edit')
+        setIsUserModalOpen(true)
+    }
+
+    const handleDelete = (user: User) => {
+        setSelectedUser(user)
+        setIsDeleteDialogOpen(true)
     }
 
     const handleViewProfile = (user: User) => {
-        // TODO: Navigate to user profile
+        // TODO: Navigate to user profile page
         console.log('View profile:', user)
     }
 
     const handleToggleStatus = async (userId: string, isActive: boolean) => {
-        // TODO: Implement API call to toggle user status
-        console.log('Toggle status:', userId, isActive)
+        toggleStatusMutation.mutate({ userId, isActive })
     }
 
     const totalPages = meta ? Math.ceil(meta.total / meta.limit) : 1
@@ -114,7 +184,7 @@ export default function UsersPage() {
                                 Manage your organization's users and permissions
                             </p>
                         </div>
-                        <Button>
+                        <Button onClick={handleCreate}>
                             <Plus className="h-4 w-4 mr-2" />
                             Add User
                         </Button>
@@ -201,8 +271,12 @@ export default function UsersPage() {
                                 <SelectItem value="all">All Roles</SelectItem>
                                 <SelectItem value="coach">Coaches</SelectItem>
                                 <SelectItem value="entrepreneur">Entrepreneurs</SelectItem>
-                                <SelectItem value="manager">Managers</SelectItem>
-                                <SelectItem value="admin">Admins</SelectItem>
+                                {currentUser?.role === 'admin' && (
+                                    <>
+                                        <SelectItem value="manager">Managers</SelectItem>
+                                        <SelectItem value="admin">Admins</SelectItem>
+                                    </>
+                                )}
                             </SelectContent>
                         </Select>
 
@@ -237,7 +311,7 @@ export default function UsersPage() {
                                     ? 'Try adjusting your filters'
                                     : 'Add your first team member to get started'}
                             </p>
-                            <Button>
+                            <Button onClick={handleCreate}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add User
                             </Button>
@@ -248,6 +322,7 @@ export default function UsersPage() {
                         <UsersTable
                             users={filteredUsers}
                             onEdit={handleEdit}
+                            onDelete={handleDelete}
                             onViewProfile={handleViewProfile}
                             onToggleStatus={handleToggleStatus}
                         />
@@ -305,6 +380,20 @@ export default function UsersPage() {
                         )}
                     </>
                 )}
+
+                {/* Modals */}
+                <UserModal
+                    open={isUserModalOpen}
+                    onClose={() => setIsUserModalOpen(false)}
+                    user={selectedUser}
+                    mode={modalMode}
+                    currentUser={currentUser}
+                />
+                <DeleteUserDialog
+                    open={isDeleteDialogOpen}
+                    onClose={() => setIsDeleteDialogOpen(false)}
+                    user={selectedUser}
+                />
             </div>
         </div>
     )

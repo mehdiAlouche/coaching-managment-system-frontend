@@ -2,7 +2,6 @@ import { Link, useLocation } from '@tanstack/react-router'
 import {
   LayoutDashboard,
   Users,
-  LogOut,
   Menu,
   X,
   Target,
@@ -146,25 +145,6 @@ export function Sidebar({ onLogout }: SidebarProps) {
               )
             })}
           </nav>
-
-          {/* User info and logout */}
-          <div className="px-4 py-6 border-t border-border space-y-4">
-            <div className="px-4 py-3 rounded-lg bg-muted/50">
-              <p className="text-sm font-medium text-foreground">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3"
-              onClick={async () => {
-                setIsMobileOpen(false)
-                await onLogout()
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
         </div>
       </aside>
     </>

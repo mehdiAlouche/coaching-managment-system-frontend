@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { UserRole } from '../../../models'
+import UsersPage from '../../../pages/UsersPage'
 
 export const Route = createFileRoute('/_authenticated/users/')({
   beforeLoad: async () => {
@@ -8,9 +9,5 @@ export const Route = createFileRoute('/_authenticated/users/')({
       throw redirect({ to: '/' })
     }
   },
-  component: RouteComponent,
+  component: UsersPage,
 })
-
-function RouteComponent() {
-  return <div>Hello "/_authenticated/users/"!</div>
-}

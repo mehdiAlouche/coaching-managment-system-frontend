@@ -32,7 +32,7 @@ type PermissionMatrix = {
 const PERMISSIONS: PermissionMatrix = {
 	manager: {
 		sessions: ['view', 'manage', 'create', 'edit', 'delete'],
-		goals: ['view', 'manage', 'create', 'edit', 'delete'],
+		goals: ['view', 'manage', 'create', 'edit', 'delete'], // Can do everything
 		payments: ['view', 'manage', 'invoice', 'edit'],
 		users: ['view', 'manage', 'create', 'edit', 'delete'],
 		orgSettings: ['view', 'configure', 'edit'],
@@ -40,7 +40,7 @@ const PERMISSIONS: PermissionMatrix = {
 	},
 	coach: {
 		sessions: ['view', 'edit'], // manage own as host will be enforced at call-site by ownership checks
-		goals: ['view', 'edit'],
+		goals: ['view', 'create', 'edit'], // Can create, view, and edit own goals
 		payments: ['view'],
 		users: [], // none
 		orgSettings: [], // none
@@ -48,7 +48,7 @@ const PERMISSIONS: PermissionMatrix = {
 	},
 	entrepreneur: {
 		sessions: ['view'], // own only enforced at call-site
-		goals: ['view', 'edit'], // own
+		goals: ['view'], // Can only view own goals and update progress (progress update is separate)
 		payments: [], // none
 		users: [], // none
 		orgSettings: [], // none

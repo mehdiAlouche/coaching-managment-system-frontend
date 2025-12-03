@@ -73,6 +73,7 @@ export function useUpdateGoalProgress() {
 
 export function useUpdateMilestoneStatus() {
   const queryClient = useQueryClient()
+  type MilestoneStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked'
   
   return useMutation({
     mutationFn: async ({ 
@@ -83,12 +84,15 @@ export function useUpdateMilestoneStatus() {
     }: { 
       goalId: string
       milestoneId: string
-      status: string
+      status: MilestoneStatus
       notes?: string 
     }) => {
+      const payload: { status: MilestoneStatus; notes?: string } = { status }
+      const cleanNotes = (notes ?? '').trim()
+      if (cleanNotes) payload.notes = cleanNotes
       const res = await apiClient.patch(
         endpoints.goals.milestoneStatus(goalId, milestoneId), 
-        { status, notes }
+        payload
       )
       return res.data
     },
@@ -160,6 +164,34 @@ export function useDeleteGoal() {
   return useMutation({
     mutationFn: async (goalId: string) => {
       const res = await apiClient.delete(endpoints.goals.delete(goalId))
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useArchiveGoal() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (goalId: string) => {
+      const res = await apiClient.patch(endpoints.goals.partialUpdate(goalId), { isArchived: true })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+}
+
+export function useChangeGoalStatus() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ goalId, status }: { goalId: string; status: string }) => {
+      const res = await apiClient.patch(endpoints.goals.partialUpdate(goalId), { status })
       return res.data
     },
     onSuccess: () => {

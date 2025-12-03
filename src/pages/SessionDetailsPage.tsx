@@ -6,6 +6,9 @@ import { UserRole } from "../models"
 import { useState } from "react"
 import { useErrorHandler } from "../hooks/useErrorHandler"
 import { useAuth } from "../context/AuthContext"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { Textarea } from "../components/ui/textarea"
+import { Button } from "../components/ui/button"
 
 interface SessionDetailsPageProps {
   id: string
@@ -16,6 +19,7 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
   const queryClient = useQueryClient()
   const { handleError, showSuccess } = useErrorHandler()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [noteText, setNoteText] = useState("")
   const { user } = useAuth()
 
   const {
@@ -46,10 +50,11 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       if (!id) throw new Error("Session ID is required")
-      const response = await apiClient.patch(endpoints.sessions.update(id), { status })
+      const response = await apiClient.patch(endpoints.sessions.statusUpdate(id), { status })
       return response.data
     },
-    onSuccess: (updatedSession) => {
+    onSuccess: (response) => {
+      const updatedSession = response.data || response
       queryClient.setQueryData(["session", id], updatedSession)
       queryClient.invalidateQueries({ queryKey: ["sessions"] })
       const statusText = updatedSession.status.charAt(0).toUpperCase() + updatedSession.status.slice(1).replace("_", " ")
@@ -59,6 +64,35 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
       handleError(error)
     },
   })
+
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ role, notes }: { role: string; notes: string }) => {
+      if (!id) throw new Error("Session ID is required")
+      const response = await apiClient.patch(endpoints.sessions.notes.patch(id), { role, notes })
+      return response.data
+    },
+    onSuccess: (response) => {
+      const updatedSession = response.data || response
+      queryClient.setQueryData(["session", id], updatedSession)
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      showSuccess("Note added successfully")
+      setNoteText("")
+    },
+    onError: (error) => {
+      handleError(error)
+    },
+  })
+
+  const handleAddNote = () => {
+    if (!noteText.trim()) return
+    // Map user role to API role field expected by PATCH /sessions/:id/notes
+    const role = user?.role === UserRole.COACH
+      ? 'coach'
+      : user?.role === UserRole.ENTREPRENEUR
+        ? 'entrepreneur'
+        : 'manager'
+    addNoteMutation.mutate({ role, notes: noteText })
+  }
 
   if (isLoading) {
     return (
@@ -87,14 +121,23 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
           </Link>
           {canManageSession && (
             <div className="flex gap-2">
-              {!isPast && session.status === "scheduled" && (
+              {session.status === "scheduled" && (
+                <button
+                  onClick={() => updateStatusMutation.mutate("confirmed")}
+                  disabled={updateStatusMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              )}
+              {(session.status === "scheduled" || session.status === "confirmed") && !isPast && (
                 <>
                   <button
                     onClick={() => updateStatusMutation.mutate("completed")}
                     disabled={updateStatusMutation.isPending}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
                   >
-                    Mark Complete
+                    Complete
                   </button>
                   <button
                     onClick={() => updateStatusMutation.mutate("cancelled")}
@@ -245,17 +288,125 @@ export default function SessionDetailsPage({ id }: SessionDetailsPageProps) {
               </div>
             )}
 
-            {/* Notes */}
-            {session.notes && Object.keys(session.notes.actionItems).length > 0 && (
-              <div className="border-t border-border pt-8 mb-8">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Notes</h3>
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="text-foreground whitespace-pre-wrap font-sans text-sm">
-                    {JSON.stringify(session.notes.actionItems, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
+            {/* Notes Section (API shape: managerNotes, coachNotes, entrepreneurNotes, actionItems[]) */}
+            <div className="border-t border-border pt-8 mb-8">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Session Notes</h3>
+
+              <Tabs defaultValue="view" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="view">View Notes</TabsTrigger>
+                  <TabsTrigger value="add">Add Note</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="view" className="space-y-4">
+                  {session.notes && Object.keys(session.notes).length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Coach Notes */}
+                      {session.notes.coachNotes && (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-blue-900 dark:text-blue-100">Coach Notes</span>
+                          </div>
+                          {(user?.role === UserRole.COACH || user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) ? (
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{session.notes.coachNotes}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">Not visible to your role</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Entrepreneur Notes */}
+                      {session.notes.entrepreneurNotes && (
+                        <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-green-900 dark:text-green-100">Entrepreneur Notes</span>
+                          </div>
+                          {(user?.role === UserRole.ENTREPRENEUR || user?.role === UserRole.COACH || user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) ? (
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{session.notes.entrepreneurNotes}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">Not visible to your role</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Manager Notes */}
+                      {session.notes.managerNotes && (
+                        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-purple-900 dark:text-purple-100">Manager Notes</span>
+                          </div>
+                          {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN || user?.role === UserRole.COACH) ? (
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{session.notes.managerNotes}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">Not visible to your role</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Action Items */}
+                      {Array.isArray(session.notes.actionItems) && session.notes.actionItems.length > 0 && (
+                        <div className="bg-muted/50 border border-border p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold">Action Items</span>
+                          </div>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            {session.notes.actionItems.map((item: any, idx: number) => (
+                              <li key={idx} className="text-muted-foreground">
+                                {typeof item === 'string' ? item : JSON.stringify(item)}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No notes added yet. Switch to "Add Note" tab to create the first note.</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="add" className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        Adding note as: <span className="text-primary capitalize">{user?.role}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {user?.role === UserRole.COACH && 'Coach note will appear under coachNotes.'}
+                        {user?.role === UserRole.ENTREPRENEUR && 'Entrepreneur note will appear under entrepreneurNotes.'}
+                        {user?.role === UserRole.MANAGER && 'Manager note will appear under managerNotes.'}
+                        {user?.role === UserRole.ADMIN && 'Admin can add a manager note (managerNotes).'}
+                      </p>
+                    </div>
+
+                    <Textarea
+                      placeholder="Enter your notes here..."
+                      value={noteText}
+                      onChange={(e) => setNoteText(e.target.value)}
+                      rows={6}
+                      className="mb-3"
+                    />
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setNoteText("")}
+                        disabled={!noteText.trim() || addNoteMutation.isPending}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        onClick={handleAddNote}
+                        disabled={!noteText.trim() || addNoteMutation.isPending}
+                      >
+                        {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
 
             {/* Delete Section */}
             {canManageSession && (

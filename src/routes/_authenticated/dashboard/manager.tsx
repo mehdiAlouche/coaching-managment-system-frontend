@@ -179,8 +179,8 @@ function TrendList({ title, items, prefix = '', Icon }: { title: string; items: 
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
       <div className="space-y-2">
-        {normalizedItems.map(it => (
-          <div key={it.label} className="flex items-center gap-3">
+        {normalizedItems.map((it, idx) => (
+          <div key={`${it.label}-${idx}`} className="flex items-center gap-3">
             <div className="w-28 text-sm text-muted-foreground truncate">{it.label}</div>
             <div className="flex-1 h-2 bg-muted rounded">
               <div className="h-2 bg-primary rounded" style={{ width: `${max ? (it.value / max) * 100 : 0}%` }} />

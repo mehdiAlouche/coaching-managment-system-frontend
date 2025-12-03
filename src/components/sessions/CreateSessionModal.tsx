@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import { apiClient, endpoints } from '@/services'
 import { useErrorHandler } from '@/hooks/useErrorHandler'
 import { format } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
 
 interface CreateSessionModalProps {
   open: boolean
@@ -49,9 +50,12 @@ const creationSteps = [
 export function CreateSessionModal({ open, onOpenChange, existingSessions = [], onCreated }: CreateSessionModalProps) {
   const { user } = useAuth()
   const { handleError, showSuccess, handleValidationError } = useErrorHandler()
+  const { toast } = useToast()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<SessionFormState>({ ...defaultState })
   const [conflictWarning, setConflictWarning] = useState<string | null>(null)
+  const [isCheckingConflict, setIsCheckingConflict] = useState(false)
+  const [hasConflictApi, setHasConflictApi] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ videoConferenceUrl?: string }>({})
 
   const organizationId = user?.organizationId ?? ''
@@ -62,6 +66,8 @@ export function CreateSessionModal({ open, onOpenChange, existingSessions = [], 
       setStep(1)
       setForm({ ...defaultState })
       setConflictWarning(null)
+      setIsCheckingConflict(false)
+      setHasConflictApi(false)
       setFieldErrors({})
     }
   }, [open])
@@ -150,13 +156,56 @@ export function CreateSessionModal({ open, onOpenChange, existingSessions = [], 
     return { conflict: conflicts.length > 0, conflicts }
   }, [existingSessions, form.coachId, form.duration, form.scheduledAt])
 
+  // Server-side conflict check (debounced)
   useEffect(() => {
-    if (hasConflict.conflict) {
-      setConflictWarning(`Conflict detected with ${hasConflict.conflicts.length} existing session${hasConflict.conflicts.length === 1 ? '' : 's'}. Adjust the time or coach to continue.`)
-    } else {
-      setConflictWarning(null)
-    }
-  }, [hasConflict])
+    const handle = setTimeout(async () => {
+      if (!form.coachId || !form.scheduledAt || !form.duration) {
+        setHasConflictApi(false)
+        setConflictWarning(null)
+        return
+      }
+      try {
+        setIsCheckingConflict(true)
+        const start = new Date(form.scheduledAt)
+        const payload = {
+          coachId: form.coachId,
+          scheduledAt: start.toISOString(),
+          duration: form.duration,
+        }
+        const res = await apiClient.post(endpoints.sessions.conflictCheck, payload)
+        const api = res.data?.data
+        const has = Boolean(api?.hasConflict)
+        setHasConflictApi(has)
+        if (has && api?.conflictingSession) {
+          const ent = api.conflictingSession.entrepreneur
+          const who = ent ? `${ent.firstName} ${ent.lastName}` : 'another session'
+          const when = api.conflictingSession.scheduledAt ? format(new Date(api.conflictingSession.scheduledAt), 'MMM d, HH:mm') : ''
+          setConflictWarning(`Conflict with ${who} at ${when}. Please adjust.`)
+          toast({
+            title: 'Scheduling conflict',
+            description: `Conflict with ${who} at ${when}. Adjust the time or coach.`,
+            variant: 'destructive',
+          })
+        } else if (has) {
+          setConflictWarning('Scheduling conflict detected. Please adjust.')
+          toast({
+            title: 'Scheduling conflict',
+            description: 'Scheduling conflict detected. Please adjust.',
+            variant: 'destructive',
+          })
+        } else {
+          setConflictWarning(null)
+        }
+      } catch (_err) {
+        setConflictWarning(null)
+        setHasConflictApi(false)
+      } finally {
+        setIsCheckingConflict(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(handle)
+  }, [form.coachId, form.scheduledAt, form.duration])
 
   const handleNext = () => {
     if (step === 1 && !form.coachId) return
@@ -176,7 +225,7 @@ export function CreateSessionModal({ open, onOpenChange, existingSessions = [], 
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1))
 
   const handleSubmit = () => {
-    if (hasConflict.conflict) {
+    if (hasConflict.conflict || hasConflictApi || isCheckingConflict) {
       setConflictWarning('Please resolve scheduling conflicts before saving this session.')
       return
     }
@@ -190,7 +239,7 @@ export function CreateSessionModal({ open, onOpenChange, existingSessions = [], 
     createSession.mutate(form)
   }
 
-  const disabledSubmit = createSession.isPending || hasConflict.conflict
+  const disabledSubmit = createSession.isPending || hasConflict.conflict || hasConflictApi || isCheckingConflict
 
   const validateVideoUrl = (value: string) => {
     if (!value) {
@@ -303,6 +352,9 @@ export function CreateSessionModal({ open, onOpenChange, existingSessions = [], 
                   onChange={(e) => setForm((prev) => ({ ...prev, scheduledAt: e.target.value }))}
                   min={new Date().toISOString().slice(0, 16)}
                 />
+                {isCheckingConflict && (
+                  <p className="text-xs text-muted-foreground">Checking…</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Duration (minutes)</Label>

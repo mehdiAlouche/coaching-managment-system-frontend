@@ -64,16 +64,6 @@ const endpoints = {
 
     // Session Notes
     notes: {
-      list: (sessionId: string) => {
-        const template = import.meta.env.VITE_API_ENDPOINT_SESSION_NOTES_LIST ||
-          '/sessions/:sessionId/notes'
-        return replaceParams(template, { sessionId })
-      },
-      create: (sessionId: string) => {
-        const template = import.meta.env.VITE_API_ENDPOINT_SESSION_NOTES_CREATE ||
-          '/sessions/:sessionId/notes'
-        return replaceParams(template, { sessionId })
-      },
       patch: (sessionId: string) => {
         const template = import.meta.env.VITE_API_ENDPOINT_SESSIONS_NOTES_PATCH ||
           '/sessions/:sessionId/notes'
@@ -113,12 +103,6 @@ const endpoints = {
       const template = import.meta.env.VITE_API_ENDPOINT_USERS_GET || '/users/:userId'
       return replaceParams(template, { userId })
     },
-
-    update: (userId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_UPDATE || '/users/:userId'
-      return replaceParams(template, { userId })
-    },
-
     partialUpdate: (userId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_USERS_PATCH || '/users/:userId'
       return replaceParams(template, { userId })
@@ -132,22 +116,7 @@ const endpoints = {
     rolePatch: (userId: string) => {
       const template = import.meta.env.VITE_API_ENDPOINT_USERS_ROLE_PATCH || '/users/:userId/role'
       return replaceParams(template, { userId })
-    },
-
-    sessions: (userId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_SESSIONS || '/users/:userId/sessions'
-      return replaceParams(template, { userId })
-    },
-
-    goals: (userId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_GOALS || '/users/:userId/goals'
-      return replaceParams(template, { userId })
-    },
-
-    payments: (userId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_USERS_PAYMENTS || '/users/:userId/payments'
-      return replaceParams(template, { userId })
-    },
+    }
   },
 
   // ─────────────────────────────────────────
@@ -254,26 +223,6 @@ const endpoints = {
   },
 
   // ─────────────────────────────────────────
-  // STARTUPS
-  // ─────────────────────────────────────────
-  startups: {
-    list: import.meta.env.VITE_API_ENDPOINT_STARTUPS_LIST || '/startups',
-    get: (startupId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_STARTUPS_GET ||
-        '/startups/:startupId'
-      return replaceParams(template, { startupId })
-    },
-  },
-
-  // ─────────────────────────────────────────
-  // ACTIVITY
-  // ─────────────────────────────────────────
-  activity: {
-    list: import.meta.env.VITE_API_ENDPOINT_ACTIVITY_LIST || '/activities',
-    create: import.meta.env.VITE_API_ENDPOINT_ACTIVITY_CREATE || '/activities',
-  },
-
-  // ─────────────────────────────────────────
   // EXPORT
   // ─────────────────────────────────────────
   export: {
@@ -292,24 +241,6 @@ const endpoints = {
   },
 
   // ─────────────────────────────────────────
-  // ROLES
-  // ─────────────────────────────────────────
-  roles: {
-    list: import.meta.env.VITE_API_ENDPOINT_ROLES_LIST || '/roles',
-    create: import.meta.env.VITE_API_ENDPOINT_ROLES_CREATE || '/roles',
-
-    update: (roleId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_ROLES_UPDATE || '/roles/:roleId'
-      return replaceParams(template, { roleId })
-    },
-
-    delete: (roleId: string) => {
-      const template = import.meta.env.VITE_API_ENDPOINT_ROLES_DELETE || '/roles/:roleId'
-      return replaceParams(template, { roleId })
-    },
-  },
-
-  // ─────────────────────────────────────────
   // FILE UPLOAD
   // ─────────────────────────────────────────
   files: {
@@ -318,43 +249,6 @@ const endpoints = {
       const template = import.meta.env.VITE_API_ENDPOINT_FILES_DELETE || '/upload/:fileId'
       return replaceParams(template, { fileId })
     }
-  },
-
-  // ─────────────────────────────────────────
-  // NOTIFICATIONS
-  // ─────────────────────────────────────────
-  notifications: {
-    list: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_LIST || '/notifications',
-    unreadCount: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_UNREAD_COUNT || '/notifications/unread-count',
-    markAllRead: import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_MARK_ALL_READ || '/notifications/mark-all-read',
-
-    read: (notificationId: string) => {
-      const template =
-        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_READ ||
-        '/notifications/:notificationId/read'
-      return replaceParams(template, { notificationId })
-    },
-
-    markRead: (notificationId: string) => {
-      const template =
-        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_READ ||
-        '/notifications/:notificationId/read'
-      return replaceParams(template, { notificationId })
-    },
-
-    delete: (notificationId: string) => {
-      const template =
-        import.meta.env.VITE_API_ENDPOINT_NOTIFICATIONS_DELETE ||
-        '/notifications/:notificationId'
-      return replaceParams(template, { notificationId })
-    }
-  },
-
-  // ─────────────────────────────────────────
-  // SEARCH
-  // ─────────────────────────────────────────
-  search: {
-    global: import.meta.env.VITE_API_ENDPOINT_SEARCH || '/search',
   }
 } as const
 

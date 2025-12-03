@@ -1,9 +1,10 @@
 import { addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from 'date-fns'
 import type { Session } from '@/models'
+import { apiClient, endpoints } from '@/services'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 
 const statusPalette: Record<string, string> = {
   scheduled: 'bg-blue-500',
@@ -15,9 +16,12 @@ const statusPalette: Record<string, string> = {
 
 export interface SessionCalendarProps {
   month: Date
-  sessions: Session[]
+  sessions?: Session[]
   onMonthChange?: (next: Date) => void
   onSessionSelect?: (session: Session) => void
+  coachId?: string
+  entrepreneurId?: string
+  status?: string
 }
 
 interface CalendarCellSession {
@@ -29,14 +33,51 @@ interface CalendarCellSession {
   session: Session
 }
 
-export function SessionCalendar({ month, sessions, onMonthChange, onSessionSelect }: SessionCalendarProps) {
+export function SessionCalendar({ month, sessions = [], onMonthChange, onSessionSelect, coachId, entrepreneurId, status }: SessionCalendarProps) {
   const monthStart = startOfMonth(month)
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
   const monthEnd = endOfMonth(month)
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
 
+  const [fetchedSessions, setFetchedSessions] = useState<Session[]>([])
+  const effectiveSessions = sessions.length ? sessions : fetchedSessions
+
+  // Fetch calendar sessions for visible month
+  useEffect(() => {
+    const fetchCalendar = async () => {
+      try {
+        const params: Record<string, any> = {
+          month: monthStart.getMonth() + 1, // 1-12
+          year: monthStart.getFullYear(),
+          view: 'month',
+        }
+        if (coachId) params.coachId = coachId
+        if (entrepreneurId) params.entrepreneurId = entrepreneurId
+        if (status) params.status = status
+        const res = await apiClient.get(endpoints.sessions.calendar, { params })
+        const cal = res.data?.data?.calendar
+        // API returns object keyed by date -> array of sessions
+        const aggregated: Session[] = []
+        if (cal && typeof cal === 'object') {
+          Object.values(cal).forEach((arr: any) => {
+            if (Array.isArray(arr)) {
+              aggregated.push(...arr as Session[])
+            }
+          })
+        } else if (Array.isArray(res.data?.data)) {
+          aggregated.push(...(res.data.data as Session[]))
+        }
+        setFetchedSessions(aggregated)
+      } catch (_err) {
+        setFetchedSessions([])
+      }
+    }
+    // Only fetch when not provided via props
+    if (!sessions.length) fetchCalendar()
+  }, [monthStart, coachId, entrepreneurId, status, sessions.length])
+
   const cells = useMemo(() => {
-    const normalized: CalendarCellSession[] = sessions.map((session) => {
+    const normalized: CalendarCellSession[] = effectiveSessions.map((session) => {
       const scheduledAt = new Date(session.scheduledAt)
       const primaryLabel = session.entrepreneur?.firstName
         ? `${session.entrepreneur.firstName} ${session.entrepreneur.lastName ?? ''}`.trim()
@@ -62,7 +103,7 @@ export function SessionCalendar({ month, sessions, onMonthChange, onSessionSelec
     }
 
     return dayCells
-  }, [calendarEnd, calendarStart, sessions])
+  }, [calendarEnd, calendarStart, effectiveSessions])
 
   const handleMonthChange = (direction: 'prev' | 'next') => {
     if (!onMonthChange) return

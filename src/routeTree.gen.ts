@@ -12,17 +12,19 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLayoutRouteImport } from './routes/_authenticated/_layout'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments/index'
 import { Route as AuthenticatedGoalsIndexRouteImport } from './routes/_authenticated/goals/index'
+import { Route as AuthenticatedSettingsOrganizationRouteImport } from './routes/_authenticated/settings/organization'
 import { Route as AuthenticatedSessionsCreateRouteImport } from './routes/_authenticated/sessions/create'
 import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated/sessions/$id'
 import { Route as AuthenticatedDashboardManagerRouteImport } from './routes/_authenticated/dashboard/manager'
 import { Route as AuthenticatedDashboardEntrepreneurRouteImport } from './routes/_authenticated/dashboard/entrepreneur'
 import { Route as AuthenticatedDashboardCoachRouteImport } from './routes/_authenticated/dashboard/coach'
+import { Route as AuthenticatedDashboardAnalyticsRouteImport } from './routes/_authenticated/dashboard/analytics'
 import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated/dashboard/admin'
 import { Route as AuthenticatedSessionsIdEditRouteImport } from './routes/_authenticated/sessions/$id.edit'
 
@@ -40,9 +42,9 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedLayoutRoute = AuthenticatedLayoutRouteImport.update({
@@ -71,6 +73,12 @@ const AuthenticatedGoalsIndexRoute = AuthenticatedGoalsIndexRouteImport.update({
   path: '/goals/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsOrganizationRoute =
+  AuthenticatedSettingsOrganizationRouteImport.update({
+    id: '/settings/organization',
+    path: '/settings/organization',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSessionsCreateRoute =
   AuthenticatedSessionsCreateRouteImport.update({
     id: '/sessions/create',
@@ -100,6 +108,12 @@ const AuthenticatedDashboardCoachRoute =
     path: '/dashboard/coach',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDashboardAnalyticsRoute =
+  AuthenticatedDashboardAnalyticsRouteImport.update({
+    id: '/dashboard/analytics',
+    path: '/dashboard/analytics',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardAdminRoute =
   AuthenticatedDashboardAdminRouteImport.update({
     id: '/dashboard/admin',
@@ -115,14 +129,16 @@ const AuthenticatedSessionsIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/calendar': typeof AuthenticatedCalendarRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
   '/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/goals': typeof AuthenticatedGoalsIndexRoute
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -131,14 +147,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/calendar': typeof AuthenticatedCalendarRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
   '/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/goals': typeof AuthenticatedGoalsIndexRoute
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -150,14 +168,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/_layout': typeof AuthenticatedLayoutRoute
-  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/_authenticated/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/_authenticated/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/_authenticated/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
   '/_authenticated/dashboard/entrepreneur': typeof AuthenticatedDashboardEntrepreneurRoute
   '/_authenticated/dashboard/manager': typeof AuthenticatedDashboardManagerRoute
   '/_authenticated/sessions/$id': typeof AuthenticatedSessionsIdRouteWithChildren
   '/_authenticated/sessions/create': typeof AuthenticatedSessionsCreateRoute
+  '/_authenticated/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/_authenticated/goals/': typeof AuthenticatedGoalsIndexRoute
   '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -168,14 +188,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/calendar'
+    | '/profile'
     | '/auth/login'
     | '/dashboard/admin'
+    | '/dashboard/analytics'
     | '/dashboard/coach'
     | '/dashboard/entrepreneur'
     | '/dashboard/manager'
     | '/sessions/$id'
     | '/sessions/create'
+    | '/settings/organization'
     | '/goals'
     | '/payments'
     | '/sessions'
@@ -184,14 +206,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/calendar'
+    | '/profile'
     | '/auth/login'
     | '/dashboard/admin'
+    | '/dashboard/analytics'
     | '/dashboard/coach'
     | '/dashboard/entrepreneur'
     | '/dashboard/manager'
     | '/sessions/$id'
     | '/sessions/create'
+    | '/settings/organization'
     | '/goals'
     | '/payments'
     | '/sessions'
@@ -202,14 +226,16 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_authenticated/_layout'
-    | '/_authenticated/calendar'
+    | '/_authenticated/profile'
     | '/auth/login'
     | '/_authenticated/dashboard/admin'
+    | '/_authenticated/dashboard/analytics'
     | '/_authenticated/dashboard/coach'
     | '/_authenticated/dashboard/entrepreneur'
     | '/_authenticated/dashboard/manager'
     | '/_authenticated/sessions/$id'
     | '/_authenticated/sessions/create'
+    | '/_authenticated/settings/organization'
     | '/_authenticated/goals/'
     | '/_authenticated/payments/'
     | '/_authenticated/sessions/'
@@ -246,11 +272,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/calendar': {
-      id: '/_authenticated/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/_layout': {
@@ -288,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGoalsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/organization': {
+      id: '/_authenticated/settings/organization'
+      path: '/settings/organization'
+      fullPath: '/settings/organization'
+      preLoaderRoute: typeof AuthenticatedSettingsOrganizationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/sessions/create': {
       id: '/_authenticated/sessions/create'
       path: '/sessions/create'
@@ -323,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardCoachRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/analytics': {
+      id: '/_authenticated/dashboard/analytics'
+      path: '/dashboard/analytics'
+      fullPath: '/dashboard/analytics'
+      preLoaderRoute: typeof AuthenticatedDashboardAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard/admin': {
       id: '/_authenticated/dashboard/admin'
       path: '/dashboard/admin'
@@ -356,13 +396,15 @@ const AuthenticatedSessionsIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedLayoutRoute: typeof AuthenticatedLayoutRoute
-  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedDashboardAdminRoute: typeof AuthenticatedDashboardAdminRoute
+  AuthenticatedDashboardAnalyticsRoute: typeof AuthenticatedDashboardAnalyticsRoute
   AuthenticatedDashboardCoachRoute: typeof AuthenticatedDashboardCoachRoute
   AuthenticatedDashboardEntrepreneurRoute: typeof AuthenticatedDashboardEntrepreneurRoute
   AuthenticatedDashboardManagerRoute: typeof AuthenticatedDashboardManagerRoute
   AuthenticatedSessionsIdRoute: typeof AuthenticatedSessionsIdRouteWithChildren
   AuthenticatedSessionsCreateRoute: typeof AuthenticatedSessionsCreateRoute
+  AuthenticatedSettingsOrganizationRoute: typeof AuthenticatedSettingsOrganizationRoute
   AuthenticatedGoalsIndexRoute: typeof AuthenticatedGoalsIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -371,14 +413,17 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLayoutRoute: AuthenticatedLayoutRoute,
-  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedDashboardAdminRoute: AuthenticatedDashboardAdminRoute,
+  AuthenticatedDashboardAnalyticsRoute: AuthenticatedDashboardAnalyticsRoute,
   AuthenticatedDashboardCoachRoute: AuthenticatedDashboardCoachRoute,
   AuthenticatedDashboardEntrepreneurRoute:
     AuthenticatedDashboardEntrepreneurRoute,
   AuthenticatedDashboardManagerRoute: AuthenticatedDashboardManagerRoute,
   AuthenticatedSessionsIdRoute: AuthenticatedSessionsIdRouteWithChildren,
   AuthenticatedSessionsCreateRoute: AuthenticatedSessionsCreateRoute,
+  AuthenticatedSettingsOrganizationRoute:
+    AuthenticatedSettingsOrganizationRoute,
   AuthenticatedGoalsIndexRoute: AuthenticatedGoalsIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,

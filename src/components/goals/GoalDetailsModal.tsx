@@ -7,14 +7,22 @@ import {
     DialogTitle,
 } from '../ui/dialog'
 import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Progress } from '../ui/progress'
 import { Badge } from '../ui/badge'
-import { Calendar, User, Target, CheckCircle2, Circle, MessageSquare } from 'lucide-react'
+import { Calendar, User, Target, CheckCircle2, Circle, MessageSquare, Archive, Trash2 } from 'lucide-react'
 import { formatFriendlyDate, formatRelativeTime } from '../../lib/date-utils'
 import { cn } from '../../lib/utils'
-import { useUpdateMilestoneStatus, useAddGoalComment } from '../../hooks/useGoals'
+import { 
+    useUpdateMilestoneStatus, 
+    useAddGoalComment, 
+    useArchiveGoal, 
+    useDeleteGoal,
+    useChangeGoalStatus,
+    useUpdateGoal 
+} from '../../hooks/useGoals'
 import { useToast } from '../../hooks/use-toast'
 import {
     Select,
@@ -23,6 +31,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../ui/select'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../ui/alert-dialog'
 
 interface GoalDetailsModalProps {
     goal: Goal | null
@@ -42,20 +60,37 @@ export default function GoalDetailsModal({
     currentUserId,
 }: GoalDetailsModalProps) {
     const { toast } = useToast()
+    type MilestoneStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked'
     const [showUpdateProgress, setShowUpdateProgress] = useState(false)
     const [newProgress, setNewProgress] = useState(goal?.progress ?? 0)
     const [showAddComment, setShowAddComment] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [editingMilestone, setEditingMilestone] = useState<string | null>(null)
-    const [milestoneStatus, setMilestoneStatus] = useState('')
+    const [milestoneStatus, setMilestoneStatus] = useState<MilestoneStatus>('not_started')
     const [milestoneNotes, setMilestoneNotes] = useState('')
+    const [showEditDetails, setShowEditDetails] = useState(false)
+    const [showChangeStatus, setShowChangeStatus] = useState(false)
+    const [newStatus, setNewStatus] = useState(goal?.status || 'not_started')
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [editedGoal, setEditedGoal] = useState({
+        title: goal?.title || '',
+        description: goal?.description || '',
+        priority: goal?.priority || 'medium',
+        targetDate: goal?.targetDate ? new Date(goal.targetDate).toISOString().split('T')[0] : ''
+    })
 
+    // Instantiate all mutation hooks
     const updateMilestoneStatusMutation = useUpdateMilestoneStatus()
     const addCommentMutation = useAddGoalComment()
+    const archiveGoalMutation = useArchiveGoal()
+    const deleteGoalMutation = useDeleteGoal()
+    const changeStatusMutation = useChangeGoalStatus()
+    const updateGoalMutation = useUpdateGoal()
 
+    // Early return if no goal
     if (!goal) return null
 
-    const progress = goal.progress ?? 0
+    // Extract IDs from populated fields
     const entrepreneurId = typeof goal.entrepreneurId === 'string'
         ? goal.entrepreneurId
         : (goal.entrepreneurId as any)?._id ?? ''
@@ -63,13 +98,22 @@ export default function GoalDetailsModal({
         ? goal.coachId
         : (goal.coachId as any)?._id ?? ''
 
+    // Define progress variable
+    const progress = goal.progress ?? 0
+
+    // Role-based permissions
     const normalizedRole = typeof userRole === 'string' ? (userRole.toLowerCase() as UserRole) : ''
     const isManager = normalizedRole === UserRole.MANAGER || normalizedRole === UserRole.ADMIN
     const isCoach = normalizedRole === UserRole.COACH && coachId === currentUserId
     const isEntrepreneurOwner = normalizedRole === UserRole.ENTREPRENEUR && entrepreneurId === currentUserId
 
-    const canUpdateProgress = isManager || isCoach || isEntrepreneurOwner
-    const canManageMilestones = isManager || isCoach
+    // Access Matrix Implementation
+    const canUpdateProgress = isManager || isCoach || isEntrepreneurOwner // All can update progress
+    const canManageMilestones = isManager || isCoach || isEntrepreneurOwner // All can update milestones
+    const canEditDetails = isManager || isCoach // Only manager/coach can edit title, description, dates, priority
+    const canChangeStatus = isManager || isCoach // Only manager/coach can change status
+    const canDelete = isManager // Only managers can delete
+    const canArchive = isManager || isCoach // Manager/coach can archive
 
     // Handle populated fields (could be string ID or object)
     const entrepreneurDisplay = typeof goal.entrepreneurId === 'string' 
@@ -134,6 +178,85 @@ export default function GoalDetailsModal({
         }
     }
 
+    const handleArchive = async () => {
+        try {
+            await archiveGoalMutation.mutateAsync(goal._id)
+            toast({
+                title: 'Success',
+                description: 'Goal archived successfully',
+            })
+            onClose()
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to archive goal',
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const handleDelete = async () => {
+        try {
+            await deleteGoalMutation.mutateAsync(goal._id)
+            toast({
+                title: 'Success',
+                description: 'Goal deleted successfully',
+            })
+            setShowDeleteDialog(false)
+            onClose()
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to delete goal',
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const handleChangeStatus = async () => {
+        try {
+            await changeStatusMutation.mutateAsync({ goalId: goal._id, status: newStatus })
+            toast({
+                title: 'Success',
+                description: 'Goal status updated successfully',
+            })
+            setShowChangeStatus(false)
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to update status',
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const handleEditDetails = async () => {
+        try {
+            const updateData: any = {
+                title: editedGoal.title.trim(),
+                description: editedGoal.description.trim(),
+                priority: editedGoal.priority,
+            }
+            
+            if (editedGoal.targetDate) {
+                updateData.targetDate = new Date(`${editedGoal.targetDate}T00:00:00Z`).toISOString()
+            }
+
+            await updateGoalMutation.mutateAsync({ goalId: goal._id, data: updateData })
+            toast({
+                title: 'Success',
+                description: 'Goal details updated successfully',
+            })
+            setShowEditDetails(false)
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to update goal',
+                variant: 'destructive',
+            })
+        }
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -142,6 +265,113 @@ export default function GoalDetailsModal({
                 </DialogHeader>
 
                 <div className="space-y-6">
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                        {canEditDetails && !showEditDetails && (
+                            <Button variant="outline" size="sm" onClick={() => setShowEditDetails(true)}>
+                                Edit Details
+                            </Button>
+                        )}
+                        {canChangeStatus && !showChangeStatus && (
+                            <Button variant="outline" size="sm" onClick={() => setShowChangeStatus(true)}>
+                                Change Status
+                            </Button>
+                        )}
+                        {canArchive && !goal.isArchived && (
+                            <Button variant="outline" size="sm" onClick={handleArchive}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                Archive
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setShowDeleteDialog(true)}
+                                className="text-destructive hover:bg-destructive/10"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Edit Details Form */}
+                    {showEditDetails && canEditDetails && (
+                        <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                            <h3 className="font-semibold">Edit Goal Details</h3>
+                            <div>
+                                <Label>Title</Label>
+                                <Input
+                                    value={editedGoal.title}
+                                    onChange={(e) => setEditedGoal({ ...editedGoal, title: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <Label>Description</Label>
+                                <Textarea
+                                    value={editedGoal.description}
+                                    onChange={(e) => setEditedGoal({ ...editedGoal, description: e.target.value })}
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Priority</Label>
+                                    <Select
+                                        value={editedGoal.priority}
+                                        onValueChange={(value) => setEditedGoal({ ...editedGoal, priority: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="low">Low</SelectItem>
+                                            <SelectItem value="medium">Medium</SelectItem>
+                                            <SelectItem value="high">High</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label>Target Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={editedGoal.targetDate}
+                                        onChange={(e) => setEditedGoal({ ...editedGoal, targetDate: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button onClick={handleEditDetails}>Save Changes</Button>
+                                <Button variant="outline" onClick={() => setShowEditDetails(false)}>Cancel</Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Change Status Form */}
+                    {showChangeStatus && canChangeStatus && (
+                        <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                            <h3 className="font-semibold">Change Goal Status</h3>
+                            <div>
+                                <Label>New Status</Label>
+                                <Select value={newStatus} onValueChange={setNewStatus}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="not_started">Not Started</SelectItem>
+                                        <SelectItem value="in_progress">In Progress</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="blocked">Blocked</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button onClick={handleChangeStatus}>Update Status</Button>
+                                <Button variant="outline" onClick={() => setShowChangeStatus(false)}>Cancel</Button>
+                            </div>
+                        </div>
+                    )}
                     {/* Progress Section */}
                     <div>
                         <div className="flex items-center justify-between mb-3">
@@ -300,7 +530,7 @@ export default function GoalDetailsModal({
                                                         className="mt-2"
                                                         onClick={() => {
                                                             setEditingMilestone(milestoneId)
-                                                            setMilestoneStatus(milestone.status)
+                                                            setMilestoneStatus((milestone.status as MilestoneStatus) || 'not_started')
                                                         }}
                                                     >
                                                         Update Status
@@ -313,7 +543,7 @@ export default function GoalDetailsModal({
                                                             <Label className="text-xs">New Status</Label>
                                                             <Select
                                                                 value={milestoneStatus}
-                                                                onValueChange={setMilestoneStatus}
+                                                                onValueChange={(value) => setMilestoneStatus(value as MilestoneStatus)}
                                                             >
                                                                 <SelectTrigger className="mt-1">
                                                                     <SelectValue />
@@ -425,6 +655,25 @@ export default function GoalDetailsModal({
                     )}
                 </div>
             </DialogContent>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Goal</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this goal? This action cannot be undone.
+                            All associated data including milestones and comments will be permanently deleted.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete Goal
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     )
 }
