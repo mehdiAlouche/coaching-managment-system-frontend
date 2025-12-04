@@ -19,19 +19,23 @@ export function useGoals(
         ...(params ?? {}),
       }
 
-      if (user?.organizationId) {
-        scopedParams.organizationId = user.organizationId
-      }
+      const isAdmin = user?.role === UserRole.ADMIN
 
-      switch (user?.role) {
-        case UserRole.COACH:
-          scopedParams.coachId = user._id
-          break
-        case UserRole.ENTREPRENEUR:
-          scopedParams.entrepreneurId = user._id
-          break
-        default:
-          break
+      if (!isAdmin) {
+        if (user?.organizationId) {
+          scopedParams.organizationId = user.organizationId
+        }
+
+        switch (user?.role) {
+          case UserRole.COACH:
+            scopedParams.coachId = user._id
+            break
+          case UserRole.ENTREPRENEUR:
+            scopedParams.entrepreneurId = user._id
+            break
+          default:
+            break
+        }
       }
 
       const res = await apiClient.get(endpoints.goals.list, { params: scopedParams })

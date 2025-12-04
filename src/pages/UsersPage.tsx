@@ -10,6 +10,7 @@ import DeleteUserDialog from '../components/users/DeleteUserDialog'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent } from '../components/ui/card'
+import ViewUserModal from '@/components/users/ViewUserModal'
 import {
     Select,
     SelectContent,
@@ -34,6 +35,7 @@ export default function UsersPage() {
     // Modal states
     const [isUserModalOpen, setIsUserModalOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
 
@@ -104,7 +106,7 @@ export default function UsersPage() {
 
             return { previousData }
         },
-        onError: (error: any, variables, context) => {
+        onError: (error: any, _variables, context) => {
             // Rollback on error
             if (context?.previousData) {
                 queryClient.setQueryData(['users', { page, limit, sort }], context.previousData)
@@ -123,23 +125,26 @@ export default function UsersPage() {
     const handleCreate = () => {
         setSelectedUser(null)
         setModalMode('create')
+        setIsViewModalOpen(false)
         setIsUserModalOpen(true)
     }
 
     const handleEdit = (user: User) => {
         setSelectedUser(user)
         setModalMode('edit')
+        setIsViewModalOpen(false)
         setIsUserModalOpen(true)
     }
 
     const handleDelete = (user: User) => {
         setSelectedUser(user)
+        setIsViewModalOpen(false)
         setIsDeleteDialogOpen(true)
     }
 
     const handleViewProfile = (user: User) => {
-        // TODO: Navigate to user profile page
-        console.log('View profile:', user)
+        setSelectedUser(user)
+        setIsViewModalOpen(true)
     }
 
     const handleToggleStatus = async (userId: string, isActive: boolean) => {
@@ -388,6 +393,14 @@ export default function UsersPage() {
                     user={selectedUser}
                     mode={modalMode}
                     currentUser={currentUser}
+                />
+                <ViewUserModal
+                    open={isViewModalOpen}
+                    onClose={() => {
+                        setIsViewModalOpen(false)
+                        setSelectedUser(null)
+                    }}
+                    user={selectedUser}
                 />
                 <DeleteUserDialog
                     open={isDeleteDialogOpen}

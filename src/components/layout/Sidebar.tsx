@@ -1,21 +1,34 @@
 import { Link, useLocation } from '@tanstack/react-router'
+import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard,
-  Users,
+  Users as UsersIcon,
   Menu,
   X,
   Target,
   DollarSign,
-  Users2
+  Users2,
+  Building2,
+  Calendar,
+  Settings,
+  BarChart3
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { getDashboardRoute } from '@/lib/dashboard-routes'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { UserRole } from '@/models'
 
 interface SidebarProps {
   onLogout: () => Promise<void> | void
+}
+
+type NavigationItem = {
+  name: string
+  href: string
+  icon: LucideIcon
+  subItems?: Array<{ name: string; href: string }>
 }
 
 export function Sidebar({ onLogout }: SidebarProps) {
@@ -24,38 +37,89 @@ export function Sidebar({ onLogout }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const dashboardRoute = getDashboardRoute(user?.role)
 
-  const getNavigation = () => {
-    const baseNav = [
+  const adminNavigation: NavigationItem[] = [
+    {
+      name: 'Dashboard',
+      href: '/admin/dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      name: 'Organizations',
+      href: '/admin/organizations',
+      icon: Building2,
+      subItems: [
+        { name: 'All Organizations', href: '/admin/organizations' },
+        { name: 'Create New', href: '/admin/organizations/new' },
+      ],
+    },
+    {
+      name: 'All Sessions',
+      href: '/admin/sessions',
+      icon: Calendar,
+    },
+    {
+      name: 'All Goals',
+      href: '/admin/goals',
+      icon: Target,
+    },
+    {
+      name: 'All Payments',
+      href: '/admin/payments',
+      icon: DollarSign,
+    },
+    {
+      name: 'All Users',
+      href: '/admin/users',
+      icon: Users2,
+    },
+    {
+      name: 'System Settings',
+      href: '/admin/settings',
+      icon: Settings,
+    },
+    {
+      name: 'Reports',
+      href: '/admin/reports',
+      icon: BarChart3,
+    },
+  ] as const
+
+  const getNavigation = (): NavigationItem[] => {
+    if (user?.role === UserRole.ADMIN) {
+      return adminNavigation
+    }
+
+    const baseNav: NavigationItem[] = [
       {
         name: 'Dashboard',
         href: dashboardRoute,
         icon: LayoutDashboard,
       },
       {
-        name: user?.role === 'entrepreneur' ? 'My Sessions' : 'Sessions',
+        name: user?.role === UserRole.ENTREPRENEUR ? 'My Sessions' : 'Sessions',
         href: '/sessions',
-        icon: Users,
+        icon: UsersIcon,
       },
     ]
 
     // Add Goals for all roles
     baseNav.push({
-      name: user?.role === 'entrepreneur' ? 'My Goals' : 'Goals',
+      name: user?.role === UserRole.ENTREPRENEUR ? 'My Goals' : 'Goals',
       href: '/goals',
       icon: Target,
     })
 
     // Add Payments for managers and coaches
-    if (user?.role === 'manager' || user?.role === 'coach') {
+    if (user?.role === UserRole.MANAGER || user?.role === UserRole.COACH) {
       baseNav.push({
-        name: user?.role === 'coach' ? 'My Payments' : 'Payments',
+        name: user?.role === UserRole.COACH ? 'My Payments' : 'Payments',
         href: '/payments',
         icon: DollarSign,
       })
     }
 
     // Add Users for managers only
-    if (user?.role === 'manager' || user?.role === 'admin') {
+    if (user?.role === UserRole.MANAGER) {
       baseNav.push({
         name: 'Users',
         href: '/users',
@@ -128,23 +192,56 @@ export function Sidebar({ onLogout }: SidebarProps) {
               const Icon = item.icon
               const active = isActive(item.href)
               return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
+                <div key={item.name} className="space-y-1">
+                  <Link
+                    to={item.href}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.name}
+                  </Link>
+
+                  {(item.subItems ?? []).map((subItem) => {
+                    const subActive = isActive(subItem.href)
+                    return (
+                      <Link
+                        key={`${item.name}-${subItem.name}`}
+                        to={subItem.href}
+                        onClick={() => setIsMobileOpen(false)}
+                        className={cn(
+                          'ml-6 flex items-center gap-3 rounded-lg px-4 py-2 text-xs font-medium transition-colors',
+                          subActive
+                            ? 'bg-primary/80 text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        {subItem.name}
+                      </Link>
+                    )
+                  })}
+                </div>
               )
             })}
           </nav>
+
+          <div className="border-t border-border px-4 py-4">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                await onLogout?.()
+                setIsMobileOpen(false)
+              }}
+            >
+              Sign out
+            </Button>
+          </div>
         </div>
       </aside>
     </>

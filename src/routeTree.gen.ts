@@ -8,6 +8,8 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,7 +28,19 @@ import { Route as AuthenticatedDashboardEntrepreneurRouteImport } from './routes
 import { Route as AuthenticatedDashboardCoachRouteImport } from './routes/_authenticated/dashboard/coach'
 import { Route as AuthenticatedDashboardAnalyticsRouteImport } from './routes/_authenticated/dashboard/analytics'
 import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated/dashboard/admin'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
+import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin/sessions'
+import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
+import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin/payments'
+import { Route as AuthenticatedAdminGoalsRouteImport } from './routes/_authenticated/admin/goals'
+import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
+import { Route as AuthenticatedAdminLayoutRouteImport } from './routes/_authenticated/admin/_layout'
+import { Route as AuthenticatedAdminOrganizationsIndexRouteImport } from './routes/_authenticated/admin/organizations/index'
 import { Route as AuthenticatedSessionsIdEditRouteImport } from './routes/_authenticated/sessions/$id.edit'
+import { Route as AuthenticatedAdminOrganizationsNewRouteImport } from './routes/_authenticated/admin/organizations/new'
+
+const AuthenticatedAdminRouteImport = createFileRoute('/_authenticated/admin')()
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -36,6 +50,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
@@ -120,17 +139,82 @@ const AuthenticatedDashboardAdminRoute =
     path: '/dashboard/admin',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSessionsRoute =
+  AuthenticatedAdminSessionsRouteImport.update({
+    id: '/sessions',
+    path: '/sessions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminReportsRoute =
+  AuthenticatedAdminReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPaymentsRoute =
+  AuthenticatedAdminPaymentsRouteImport.update({
+    id: '/payments',
+    path: '/payments',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminGoalsRoute = AuthenticatedAdminGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminDashboardRoute =
+  AuthenticatedAdminDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLayoutRoute =
+  AuthenticatedAdminLayoutRouteImport.update({
+    id: '/_layout',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminOrganizationsIndexRoute =
+  AuthenticatedAdminOrganizationsIndexRouteImport.update({
+    id: '/organizations/',
+    path: '/organizations/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedSessionsIdEditRoute =
   AuthenticatedSessionsIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedSessionsIdRoute,
   } as any)
+const AuthenticatedAdminOrganizationsNewRoute =
+  AuthenticatedAdminOrganizationsNewRouteImport.update({
+    id: '/organizations/new',
+    path: '/organizations/new',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
+  '/admin': typeof AuthenticatedAdminLayoutRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/goals': typeof AuthenticatedAdminGoalsRoute
+  '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
@@ -143,12 +227,22 @@ export interface FileRoutesByFullPath {
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/admin/organizations/new': typeof AuthenticatedAdminOrganizationsNewRoute
   '/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
+  '/admin': typeof AuthenticatedAdminLayoutRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/goals': typeof AuthenticatedAdminGoalsRoute
+  '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
@@ -161,7 +255,9 @@ export interface FileRoutesByTo {
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/admin/organizations/new': typeof AuthenticatedAdminOrganizationsNewRoute
   '/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +266,15 @@ export interface FileRoutesById {
   '/_authenticated/_layout': typeof AuthenticatedLayoutRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/auth/login': typeof AuthLoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/admin/_layout': typeof AuthenticatedAdminLayoutRoute
+  '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/_authenticated/admin/goals': typeof AuthenticatedAdminGoalsRoute
+  '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/_authenticated/admin/sessions': typeof AuthenticatedAdminSessionsRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/_authenticated/dashboard/analytics': typeof AuthenticatedDashboardAnalyticsRoute
   '/_authenticated/dashboard/coach': typeof AuthenticatedDashboardCoachRoute
@@ -182,7 +287,9 @@ export interface FileRoutesById {
   '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/admin/organizations/new': typeof AuthenticatedAdminOrganizationsNewRoute
   '/_authenticated/sessions/$id/edit': typeof AuthenticatedSessionsIdEditRoute
+  '/_authenticated/admin/organizations/': typeof AuthenticatedAdminOrganizationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,6 +297,14 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/auth/login'
+    | '/admin'
+    | '/admin/dashboard'
+    | '/admin/goals'
+    | '/admin/payments'
+    | '/admin/reports'
+    | '/admin/sessions'
+    | '/admin/settings'
+    | '/admin/users'
     | '/dashboard/admin'
     | '/dashboard/analytics'
     | '/dashboard/coach'
@@ -202,12 +317,22 @@ export interface FileRouteTypes {
     | '/payments'
     | '/sessions'
     | '/users'
+    | '/admin/organizations/new'
     | '/sessions/$id/edit'
+    | '/admin/organizations'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/profile'
     | '/auth/login'
+    | '/admin'
+    | '/admin/dashboard'
+    | '/admin/goals'
+    | '/admin/payments'
+    | '/admin/reports'
+    | '/admin/sessions'
+    | '/admin/settings'
+    | '/admin/users'
     | '/dashboard/admin'
     | '/dashboard/analytics'
     | '/dashboard/coach'
@@ -220,7 +345,9 @@ export interface FileRouteTypes {
     | '/payments'
     | '/sessions'
     | '/users'
+    | '/admin/organizations/new'
     | '/sessions/$id/edit'
+    | '/admin/organizations'
   id:
     | '__root__'
     | '/'
@@ -228,6 +355,15 @@ export interface FileRouteTypes {
     | '/_authenticated/_layout'
     | '/_authenticated/profile'
     | '/auth/login'
+    | '/_authenticated/admin'
+    | '/_authenticated/admin/_layout'
+    | '/_authenticated/admin/dashboard'
+    | '/_authenticated/admin/goals'
+    | '/_authenticated/admin/payments'
+    | '/_authenticated/admin/reports'
+    | '/_authenticated/admin/sessions'
+    | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/users'
     | '/_authenticated/dashboard/admin'
     | '/_authenticated/dashboard/analytics'
     | '/_authenticated/dashboard/coach'
@@ -240,7 +376,9 @@ export interface FileRouteTypes {
     | '/_authenticated/payments/'
     | '/_authenticated/sessions/'
     | '/_authenticated/users/'
+    | '/_authenticated/admin/organizations/new'
     | '/_authenticated/sessions/$id/edit'
+    | '/_authenticated/admin/organizations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -264,6 +402,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/auth/login': {
       id: '/auth/login'
@@ -370,6 +515,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/sessions': {
+      id: '/_authenticated/admin/sessions'
+      path: '/sessions'
+      fullPath: '/admin/sessions'
+      preLoaderRoute: typeof AuthenticatedAdminSessionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/reports': {
+      id: '/_authenticated/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/payments': {
+      id: '/_authenticated/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/goals': {
+      id: '/_authenticated/admin/goals'
+      path: '/goals'
+      fullPath: '/admin/goals'
+      preLoaderRoute: typeof AuthenticatedAdminGoalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/dashboard': {
+      id: '/_authenticated/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AuthenticatedAdminDashboardRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/_layout': {
+      id: '/_authenticated/admin/_layout'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminLayoutRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/organizations/': {
+      id: '/_authenticated/admin/organizations/'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizationsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/sessions/$id/edit': {
       id: '/_authenticated/sessions/$id/edit'
       path: '/edit'
@@ -377,8 +585,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsIdEditRouteImport
       parentRoute: typeof AuthenticatedSessionsIdRoute
     }
+    '/_authenticated/admin/organizations/new': {
+      id: '/_authenticated/admin/organizations/new'
+      path: '/organizations/new'
+      fullPath: '/admin/organizations/new'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizationsNewRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminLayoutRoute: typeof AuthenticatedAdminLayoutRoute
+  AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
+  AuthenticatedAdminGoalsRoute: typeof AuthenticatedAdminGoalsRoute
+  AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
+  AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
+  AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminOrganizationsNewRoute: typeof AuthenticatedAdminOrganizationsNewRoute
+  AuthenticatedAdminOrganizationsIndexRoute: typeof AuthenticatedAdminOrganizationsIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminLayoutRoute: AuthenticatedAdminLayoutRoute,
+  AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
+  AuthenticatedAdminGoalsRoute: AuthenticatedAdminGoalsRoute,
+  AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
+  AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
+  AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminOrganizationsNewRoute:
+    AuthenticatedAdminOrganizationsNewRoute,
+  AuthenticatedAdminOrganizationsIndexRoute:
+    AuthenticatedAdminOrganizationsIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedSessionsIdRouteChildren {
   AuthenticatedSessionsIdEditRoute: typeof AuthenticatedSessionsIdEditRoute
@@ -397,6 +643,7 @@ const AuthenticatedSessionsIdRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedLayoutRoute: typeof AuthenticatedLayoutRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardAdminRoute: typeof AuthenticatedDashboardAdminRoute
   AuthenticatedDashboardAnalyticsRoute: typeof AuthenticatedDashboardAnalyticsRoute
   AuthenticatedDashboardCoachRoute: typeof AuthenticatedDashboardCoachRoute
@@ -414,6 +661,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLayoutRoute: AuthenticatedLayoutRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardAdminRoute: AuthenticatedDashboardAdminRoute,
   AuthenticatedDashboardAnalyticsRoute: AuthenticatedDashboardAnalyticsRoute,
   AuthenticatedDashboardCoachRoute: AuthenticatedDashboardCoachRoute,

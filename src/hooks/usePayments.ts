@@ -20,14 +20,18 @@ export function usePayments(
 
       if (!user?._id) return []
 
-      if (user.organizationId) {
-        scopedParams.organizationId = user.organizationId
-      }
+      const isAdmin = user.role === UserRole.ADMIN
 
-      if (user.role === UserRole.COACH) {
-        scopedParams.coachId = user._id
-      } else if (user.role === UserRole.ENTREPRENEUR) {
-        scopedParams.entrepreneurId = user._id
+      if (!isAdmin) {
+        if (user.organizationId) {
+          scopedParams.organizationId = user.organizationId
+        }
+
+        if (user.role === UserRole.COACH) {
+          scopedParams.coachId = user._id
+        } else if (user.role === UserRole.ENTREPRENEUR) {
+          scopedParams.entrepreneurId = user._id
+        }
       }
 
       const res = await apiClient.get(endpoints.payments.list, { params: scopedParams })
